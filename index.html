@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Bitácora Escolar - V2.0</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header Principal -->
+        <div class="header-main glass-card fade-in">
+            <h1 class="mb-2"><i class="fas fa-graduation-cap"></i> Control de Bitácora Escolar v2.0</h1>
+            <h4 class="mb-0 opacity-75">Profesor Diego Durán-Jiménez</h4>
+        </div>
+
+        <!-- Panel de Control -->
+        <div class="glass-card mb-4 fade-in">
+            <div class="card-header-custom">
+                <h5 class="mb-0"><i class="fas fa-cog"></i> Panel de Control</h5>
+            </div>
+            <div class="card-body p-4" id="controlPanel">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold" for="groupSelect">Seleccionar Grupo:</label>
+                        <select id="groupSelect" class="form-select" required>
+                            <option value="" selected disabled>Seleccione un grupo</option>
+                        </select>
+                        <div id="groupSelect-error" class="error-message"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold" for="classDate">Fecha de la Clase:</label>
+                        <input type="date" id="classDate" class="form-control" required>
+                        <div id="classDate-error" class="error-message"></div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold" for="startTime">Hora de Inicio:</label>
+                        <input type="time" id="startTime" class="form-control" required>
+                        <div id="startTime-error" class="error-message"></div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button class="btn btn-primary-custom btn-custom" id="btn-statistics">
+                            <i class="fas fa-chart-line"></i> Estadísticas
+                        </button>
+                        <button class="btn btn-success-custom btn-custom" id="btn-history">
+                            <i class="fas fa-history"></i> Historial
+                        </button>
+                        <button class="btn btn-custom btn-secondary-custom" id="btn-config">
+                            <i class="fas fa-cog"></i> Config
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="sessionInfo" class="session-info" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Sesión actual:</strong> 
+                            <span id="currentSession"></span>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <i class="fas fa-users"></i> 
+                            <strong>Estudiantes:</strong> 
+                            <span id="studentCount">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor dinámico para componentes -->
+        <div id="dynamicContent"></div>
+
+        <!-- Botones de Acción -->
+        <div class="text-center mb-4 fade-in" id="actionButtons" style="display: none;">
+            <button class="btn btn-generate me-3" id="btn-pdf">
+                <i class="fas fa-file-pdf"></i> Generar Bitácora PDF
+            </button>
+            <button class="btn btn-success-custom btn-custom" id="btn-save">
+                <i class="fas fa-save"></i> Guardar Datos
+            </button>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="modals-container"></div>
+
+    <!-- Botón de ayuda flotante -->
+    <button class="floating-btn" id="btn-help" title="Ayuda y Guía de Uso">
+        <i class="fas fa-question"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Nuestros módulos - ORDEN IMPORTANTE -->
+    <script src="js/config.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/student-manager.js"></script>
+    <script src="js/session-manager.js"></script>
+    <script src="js/pdf-generator.js"></script>
+    <script src="js/statistics.js"></script>
+    <script src="js/ui-manager.js"></script>
+    <script src="js/app.js"></script>
+
+
+</body>
+</html>
