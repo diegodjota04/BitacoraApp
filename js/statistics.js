@@ -1,5 +1,9 @@
 /**
  * Gestor de estadísticas del sistema
+ * 
+ * CORRECCIÓN: Las estadísticas ahora se recalculan desde cero
+ * leyendo todas las sesiones guardadas. Esto evita que los datos
+ * se dupliquen cada vez que se guarda una sesión.
  */
 class StatisticsManager {
     constructor() {
@@ -8,63 +12,107 @@ class StatisticsManager {
     }
 
     /**
-     * Carga estadísticas desde almacenamiento 
+     * Carga estadísticas recalculándolas desde todas las sesiones guardadas.
+     * Esto garantiza que siempre estén actualizadas y sin duplicados.
      */
     loadStatistics() {
         try {
-            const savedStats = StorageService.get('statistics', {});
-            if (savedStats && typeof savedStats === 'object') {
-                // Convertir objetos guardados de vuelta a Maps
-                this.data = new Map();
-                
-                Object.entries(savedStats).forEach(([groupName, groupData]) => {
-                   if (groupData && typeof groupData === 'object') {
-                    // Verificar que groupData no esté corrupto
-                    if (Object.keys(groupData).length === 0) {
-                        console.warn(`Grupo ${groupName} tiene datos vacíos, omitiendo`);
-                        return;
-                    }
-                    this.data.set(groupName, new Map(Object.entries(groupData)));
-                }
-            });
-        }
-        console.log('Estadísticas cargadas:', this.data.size, 'grupos');
-    } catch (error) {
-        console.error('Error cargando estadísticas:', error);
-        errorHandler.handle(error, 'StatisticsManager.loadStatistics');
-        this.data = new Map();
-    }
-}
-
-
-    /**
-     * Guarda estadísticas 
-     */
-    saveStatistics() {
-        try {
-            const statsObject = {};
-            
-            // Convertir Maps a objetos para guardado
-            this.data.forEach((groupStats, groupName) => {
-                if (groupStats instanceof Map) {
-                    statsObject[groupName] = Object.fromEntries(groupStats.entries());
-                } else {
-                    statsObject[groupName] = groupStats;
-                }
-            });
-            
-            return StorageService.set('statistics', statsObject);
+            this.data = this.recalculateFromAllSessions();
         } catch (error) {
-            console.error('Error guardando estadísticas:', error);
-            errorHandler.handle(error, 'StatisticsManager.saveStatistics');
-            return false;
+            console.error('Error cargando estadísticas:', error);
+            errorHandler.handle(error, 'StatisticsManager.loadStatistics');
+            this.data = new Map();
         }
     }
 
     /**
-     * Actualiza estadísticas con datos de sesión
-     * @param {Object} sessionData - Datos de la sesión
-     * @returns {boolean} - Verdadero si se actualizó correctamente
+     * Lee TODAS las sesiones guardadas y recalcula las estadísticas
+     * desde cero. Así no hay duplicados aunque se guarde varias veces.
+     * 
+     * @returns {Map} - Mapa de estadísticas por grupo
+     */
+    recalculateFromAllSessions() {
+        const result = new Map();
+
+        try {
+            // Obtener todas las claves de sesiones guardadas
+            const sessionKeys = StorageService.getKeysMatching('session_');
+
+            sessionKeys.forEach(key => {
+                const session = StorageService.get(key);
+
+                // Ignorar sesiones inválidas o sin estudiantes
+                if (!session || !session.grupo || !session.students) return;
+                if (!session.lastSaved) return; // Solo sesiones que se hayan guardado
+
+                const grupo = session.grupo;
+
+                if (!result.has(grupo)) {
+                    result.set(grupo, new Map());
+                }
+
+                const groupStats = result.get(grupo);
+
+                Object.entries(session.students).forEach(([studentName, studentData]) => {
+                    if (!groupStats.has(studentName)) {
+                        groupStats.set(studentName, {
+                            presente: 0,
+                            ausente: 0,
+                            tarde: 0,
+                            bano: 0,
+                            enfermeria: 0,
+                            otro: 0,
+                            totalSesiones: 0,
+                            comentarios: []
+                        });
+                    }
+
+                    const stats = groupStats.get(studentName);
+
+                    // Sumar esta sesión (cada sesión solo se lee una vez)
+                    const estado = studentData.estado || 'presente';
+                    if (stats.hasOwnProperty(estado)) {
+                        stats[estado]++;
+                    }
+
+                    if (studentData.bano) stats.bano++;
+                    if (studentData.enfermeria) stats.enfermeria++;
+                    if (studentData.otro) stats.otro++;
+                    stats.totalSesiones++;
+
+                    // Agregar comentarios de esta sesión
+                    if (Array.isArray(studentData.comentarios)) {
+                        studentData.comentarios.forEach(comment => {
+                            if (comment.text) {
+                                stats.comentarios.push({
+                                    fecha: session.fecha,
+                                    texto: SecurityUtils.sanitizeInput(
+                                        comment.text,
+                                        CONFIG.MAX_COMMENT_LENGTH
+                                    ),
+                                    tipo: comment.type || CONFIG.COMMENT_TYPES.GENERAL
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            console.log(`Estadísticas recalculadas: ${result.size} grupo(s), ${sessionKeys.length} sesión(es)`);
+        } catch (error) {
+            console.error('Error recalculando estadísticas:', error);
+        }
+
+        return result;
+    }
+
+    /**
+     * Se llama al guardar una sesión. Recalcula todo desde cero
+     * para que las estadísticas siempre sean correctas.
+     * 
+     * @param {Object} sessionData - Datos de la sesión recién guardada (no se usa
+     *                               directamente, solo dispara el recálculo)
+     * @returns {boolean}
      */
     updateFromSession(sessionData) {
         try {
@@ -72,52 +120,9 @@ class StatisticsManager {
                 throw new Error('Datos de sesión inválidos');
             }
 
-            const grupo = sessionData.grupo;
-            if (!this.data.has(grupo)) {
-                this.data.set(grupo, new Map());
-            }
-
-            const groupStats = this.data.get(grupo);
-
-            // Actualizar estadísticas por estudiante
-            Object.entries(sessionData.students).forEach(([studentName, studentData]) => {
-                if (!groupStats.has(studentName)) {
-                    groupStats.set(studentName, {
-                        presente: 0,
-                        ausente: 0,
-                        tarde: 0,
-                        bano: 0,
-                        enfermeria: 0,
-                        otro: 0,
-                        totalSesiones: 0,
-                        comentarios: []
-                    });
-                }
-
-                const studentStats = groupStats.get(studentName);
-                
-                // Incrementar contadores
-                studentStats[studentData.estado]++;
-                if (studentData.bano) studentStats.bano++;
-                if (studentData.enfermeria) studentStats.enfermeria++;
-                if (studentData.otro) studentStats.otro++;
-                studentStats.totalSesiones++;
-
-                // Agregar comentarios
-                if (studentData.comentarios && Array.isArray(studentData.comentarios)) {
-                    studentData.comentarios.forEach(comment => {
-                        if (comment.text) {
-                            studentStats.comentarios.push({
-                                fecha: sessionData.fecha,
-                                texto: SecurityUtils.sanitizeInput(comment.text, CONFIG.MAX_COMMENT_LENGTH),
-                                tipo: comment.type || CONFIG.COMMENT_TYPES.GENERAL
-                            });
-                        }
-                    });
-                }
-            });
-
-            return this.saveStatistics();
+            // Recalcular todo desde las sesiones guardadas en storage
+            this.data = this.recalculateFromAllSessions();
+            return true;
         } catch (error) {
             errorHandler.handle(error, 'StatisticsManager.updateFromSession');
             return false;
@@ -125,21 +130,29 @@ class StatisticsManager {
     }
 
     /**
-     * Obtiene estadísticas de un grupo
-     * @param {string} groupName - Nombre del grupo
-     * @returns {Object} - Estadísticas del grupo
+     * Guarda estadísticas (mantenido por compatibilidad, ya no es necesario
+     * porque ahora se recalculan en tiempo real desde las sesiones)
      */
-     getGroupStatistics(groupName) {
+    saveStatistics() {
+        // Las estadísticas ya no se guardan por separado.
+        // Se recalculan desde las sesiones cada vez que se necesitan.
+        return true;
+    }
+
+    /**
+     * Obtiene estadísticas de un grupo específico
+     * @param {string} groupName - Nombre del grupo
+     * @returns {Object} - { students, summary }
+     */
+    getGroupStatistics(groupName) {
         try {
             if (!this.data.has(groupName)) {
                 return { students: {}, summary: this.getEmptyGroupSummary() };
             }
 
             const groupStats = this.data.get(groupName);
-            
-            // Verificar que groupStats sea un Map
+
             if (!groupStats || !(groupStats instanceof Map)) {
-                console.warn(`Datos inválidos para grupo ${groupName}:`, groupStats);
                 return { students: {}, summary: this.getEmptyGroupSummary() };
             }
 
@@ -148,16 +161,15 @@ class StatisticsManager {
 
             return { students, summary };
         } catch (error) {
-            console.error('Error en getGroupStatistics:', error);
             errorHandler.handle(error, 'StatisticsManager.getGroupStatistics');
             return { students: {}, summary: this.getEmptyGroupSummary() };
         }
     }
 
     /**
-     * Calcula resumen de grupo
-     * @param {Map} groupStats - Estadísticas del grupo
-     * @returns {Object} - Resumen calculado
+     * Calcula resumen de un grupo
+     * @param {Map} groupStats
+     * @returns {Object}
      */
     calculateGroupSummary(groupStats) {
         const summary = {
@@ -178,52 +190,51 @@ class StatisticsManager {
 
         let maxSesiones = 0;
 
-        // Calcular totales
-        groupStats.forEach((studentStats, studentName) => {
-            summary.totalPresentes += studentStats.presente;
-            summary.totalAusentes += studentStats.ausente;
-            summary.totalTardes += studentStats.tarde;
-            summary.totalBano += studentStats.bano;
+        groupStats.forEach((studentStats) => {
+            summary.totalPresentes  += studentStats.presente;
+            summary.totalAusentes   += studentStats.ausente;
+            summary.totalTardes     += studentStats.tarde;
+            summary.totalBano       += studentStats.bano;
             summary.totalEnfermeria += studentStats.enfermeria;
-            summary.totalOtro += studentStats.otro;
-            
+            summary.totalOtro       += studentStats.otro;
+
             if (studentStats.totalSesiones > maxSesiones) {
                 maxSesiones = studentStats.totalSesiones;
             }
         });
 
         summary.totalSesiones = maxSesiones;
-        
-        // Calcular promedio de asistencia
-        const totalPosibleAsistencias = summary.totalEstudiantes * summary.totalSesiones;
-        if (totalPosibleAsistencias > 0) {
-            summary.promedioAsistencia = (summary.totalPresentes / totalPosibleAsistencias) * 100;
+
+        const totalPosible = summary.totalEstudiantes * summary.totalSesiones;
+        if (totalPosible > 0) {
+            summary.promedioAsistencia = (summary.totalPresentes / totalPosible) * 100;
         }
 
-        // Identificar estudiantes problemáticos
-        summary.estudiantesConMasAusencias = this.getTopStudentsByMetric(groupStats, 'ausente', 5);
-        summary.estudiantesConMasTardanzas = this.getTopStudentsByMetric(groupStats, 'tarde', 5);
+        summary.estudiantesConMasAusencias  = this.getTopStudentsByMetric(groupStats, 'ausente', 5);
+        summary.estudiantesConMasTardanzas  = this.getTopStudentsByMetric(groupStats, 'tarde', 5);
 
         return summary;
     }
 
     /**
-     * Obtiene estudiantes con mayor valor en una métrica
+     * Devuelve los N estudiantes con más ocurrencias de una métrica
      */
     getTopStudentsByMetric(groupStats, metric, limit = 5) {
         return Array.from(groupStats.entries())
-            .filter(([name, stats]) => stats[metric] > 0)
+            .filter(([, stats]) => stats[metric] > 0)
             .sort((a, b) => b[1][metric] - a[1][metric])
             .slice(0, limit)
             .map(([name, stats]) => ({
                 nombre: name,
                 valor: stats[metric],
-                porcentaje: stats.totalSesiones > 0 ? (stats[metric] / stats.totalSesiones * 100).toFixed(1) : 0
+                porcentaje: stats.totalSesiones > 0
+                    ? (stats[metric] / stats.totalSesiones * 100).toFixed(1)
+                    : 0
             }));
     }
 
     /**
-     * Obtiene resumen vacío de grupo
+     * Resumen vacío para cuando no hay datos
      */
     getEmptyGroupSummary() {
         return {
@@ -242,9 +253,12 @@ class StatisticsManager {
     }
 
     /**
-     * Obtiene todas las estadísticas
+     * Devuelve todas las estadísticas recalculadas
      */
     getAllStatistics() {
+        // Recalcular antes de mostrar para garantizar datos frescos
+        this.data = this.recalculateFromAllSessions();
+
         const result = {};
         this.data.forEach((groupStats, groupName) => {
             result[groupName] = this.getGroupStatistics(groupName);
