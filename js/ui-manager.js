@@ -91,7 +91,6 @@ class UIManager {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.setLoading(button, true);
-                    
                     try {
                         handler();
                     } finally {
@@ -106,7 +105,6 @@ class UIManager {
      * Enlaza eventos globales
      */
     bindGlobalEvents() {
-        // Atajos de teclado
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key) {
@@ -122,7 +120,6 @@ class UIManager {
             }
         });
 
-        // Limpiar errores al hacer foco
         document.addEventListener('focus', (e) => {
             if (e.target.classList.contains('form-control') || e.target.classList.contains('form-select')) {
                 errorHandler.clearFieldError(e.target.id);
@@ -130,14 +127,13 @@ class UIManager {
         }, true);
     }
 
-/**
+    /**
      * Inicializa la aplicación
      */
     initialize() {
         this.loadGroups();
         this.setCurrentDateTime();
-        
-        // Verificar si hay grupos disponibles
+
         const groups = this.studentManager.getGroupNames();
         if (groups.length === 0) {
             this.showNoGroupsMessage();
@@ -169,15 +165,13 @@ class UIManager {
                     </div>
                 </div>
             `;
-            
-            // Enlazar evento al botón
             document.getElementById('btn-open-config')?.addEventListener('click', () => {
                 this.showConfig();
             });
         }
     }
 
-/**
+    /**
      * Carga grupos en el selector
      */
     loadGroups() {
@@ -187,12 +181,12 @@ class UIManager {
         try {
             const groups = this.studentManager.getGroupNames();
             groupSelect.innerHTML = '<option value="" selected disabled>Seleccione un grupo</option>';
-            
+
             if (groups.length === 0) {
                 groupSelect.innerHTML = '<option value="" disabled>No hay grupos configurados - Use Configuración</option>';
                 return;
             }
-            
+
             groups.forEach(grupo => {
                 const option = document.createElement('option');
                 option.value = SecurityUtils.sanitizeAttribute(grupo);
@@ -209,7 +203,7 @@ class UIManager {
      */
     setCurrentDateTime() {
         const today = new Date();
-        
+
         const classDate = this.elements.get('classDate');
         if (classDate) {
             classDate.value = today.toISOString().split('T')[0];
@@ -222,30 +216,33 @@ class UIManager {
     }
 
     /**
-     * Maneja eventos de cambio
+     * Maneja cambio de grupo
      */
     handleGroupChange(grupo) {
         const fecha = this.elements.get('classDate')?.value;
         const startTime = this.elements.get('startTime')?.value;
-        
         if (grupo && fecha && startTime) {
             this.createSession(grupo, fecha, startTime);
         }
     }
 
+    /**
+     * Maneja cambio de fecha
+     */
     handleDateChange(fecha) {
         const grupo = this.elements.get('groupSelect')?.value;
         const startTime = this.elements.get('startTime')?.value;
-        
         if (grupo && fecha && startTime) {
             this.createSession(grupo, fecha, startTime);
         }
     }
 
+    /**
+     * Maneja cambio de hora
+     */
     handleTimeChange(startTime) {
         const grupo = this.elements.get('groupSelect')?.value;
         const fecha = this.elements.get('classDate')?.value;
-        
         if (grupo && fecha && startTime) {
             this.createSession(grupo, fecha, startTime);
         }
@@ -276,33 +273,22 @@ class UIManager {
         const studentCount = this.elements.get('studentCount');
         const sessionInfo = this.elements.get('sessionInfo');
 
-        if (currentSession) {
-            currentSession.textContent = `${session.grupo} - ${session.fecha}`;
-        }
-
-        if (studentCount) {
-            studentCount.textContent = Object.keys(session.students).length;
-        }
-
-        if (sessionInfo) {
-            sessionInfo.style.display = 'block';
-        }
+        if (currentSession) currentSession.textContent = `${session.grupo} - ${session.fecha}`;
+        if (studentCount) studentCount.textContent = Object.keys(session.students).length;
+        if (sessionInfo) sessionInfo.style.display = 'block';
     }
 
-/**
-     * Muestra interfaz completa 
+    /**
+     * Muestra interfaz completa
      */
     showBasicInterface() {
         const actionButtons = this.elements.get('actionButtons');
-        if (actionButtons) {
-            actionButtons.style.display = 'block';
-        }
+        if (actionButtons) actionButtons.style.display = 'block';
 
         this.renderStudentsTable();
         this.renderLessonForm();
         this.renderEvaluationForm();
-        
-        // Cargar datos guardados después de renderizar
+
         setTimeout(() => {
             this.loadSessionDataToUI();
         }, 100);
@@ -320,7 +306,7 @@ class UIManager {
     }
 
     /**
-     * Genera HTML de tabla de estudiantes con botones mejorados
+     * Genera HTML de tabla de estudiantes
      */
     generateStudentsTableHtml() {
         const session = this.sessionManager.getCurrentSession();
@@ -344,40 +330,40 @@ class UIManager {
                             </thead>
                             <tbody>`;
 
-        Object.entries(session.students).forEach(([studentName, studentData], index) => {
+        Object.entries(session.students).forEach(([studentName, studentData]) => {
             const safeStudentName = SecurityUtils.escapeHtml(studentName);
             const studentId = SecurityUtils.generateSecureId('student');
-            
+
             html += `
                 <tr class="student-row">
                     <td class="fw-bold align-middle">${safeStudentName}</td>
                     <td class="align-middle">
                         <div class="btn-group-attendance" role="group" data-student="${SecurityUtils.sanitizeAttribute(studentName)}">
-                            <button type="button" class="btn btn-attendance ${studentData.estado === 'presente' ? 'btn-success active' : 'btn-outline-success'}" 
+                            <button type="button" class="btn btn-attendance ${studentData.estado === 'presente' ? 'btn-success active' : 'btn-outline-success'}"
                                     data-state="presente">
                                 <i class="fas fa-check-circle"></i> Presente
                             </button>
-                            <button type="button" class="btn btn-attendance ${studentData.estado === 'ausente' ? 'btn-danger active' : 'btn-outline-danger'}" 
+                            <button type="button" class="btn btn-attendance ${studentData.estado === 'ausente' ? 'btn-danger active' : 'btn-outline-danger'}"
                                     data-state="ausente">
                                 <i class="fas fa-times-circle"></i> Ausente
                             </button>
-                            <button type="button" class="btn btn-attendance ${studentData.estado === 'tarde' ? 'btn-warning active' : 'btn-outline-warning'}" 
+                            <button type="button" class="btn btn-attendance ${studentData.estado === 'tarde' ? 'btn-warning active' : 'btn-outline-warning'}"
                                     data-state="tarde">
                                 <i class="fas fa-clock"></i> Tarde
                             </button>
                         </div>
                     </td>
                     <td class="align-middle">
-                   <div class="btn-group-activities" data-student="${SecurityUtils.sanitizeAttribute(studentName)}">
-                            <button type="button" class="btn btn-activity ${studentData.bano ? 'btn-info active' : 'btn-outline-info'}" 
+                        <div class="btn-group-activities" data-student="${SecurityUtils.sanitizeAttribute(studentName)}">
+                            <button type="button" class="btn btn-activity ${studentData.bano ? 'btn-info active' : 'btn-outline-info'}"
                                     data-activity="bano" title="Salida al baño">
                                 <i class="fas fa-restroom"></i>
                             </button>
-                            <button type="button" class="btn btn-activity ${studentData.enfermeria ? 'btn-warning active' : 'btn-outline-warning'}" 
+                            <button type="button" class="btn btn-activity ${studentData.enfermeria ? 'btn-warning active' : 'btn-outline-warning'}"
                                     data-activity="enfermeria" title="Visita a enfermería">
                                 <i class="fas fa-plus-square"></i>
                             </button>
-                            <button type="button" class="btn btn-activity ${studentData.otro ? 'btn-secondary active' : 'btn-outline-secondary'}" 
+                            <button type="button" class="btn btn-activity ${studentData.otro ? 'btn-secondary active' : 'btn-outline-secondary'}"
                                     data-activity="otro" title="Otra actividad">
                                 <i class="fas fa-ellipsis-h"></i>
                             </button>
@@ -390,7 +376,7 @@ class UIManager {
                         <div class="comment-container" id="comments_${studentId}">
                             ${this.generateCommentsHtml(studentData.comentarios)}
                             <div class="mt-2">
-                                <input type="text" class="form-control form-control-sm" 
+                                <input type="text" class="form-control form-control-sm"
                                        placeholder="Agregar comentario..." maxlength="${CONFIG.MAX_COMMENT_LENGTH}">
                                 <button class="btn btn-primary btn-sm mt-1" data-action="save-comment" data-student="${SecurityUtils.sanitizeAttribute(studentName)}">
                                     <i class="fas fa-save"></i> Guardar
@@ -473,8 +459,8 @@ class UIManager {
         this.bindFormEvents();
     }
 
- /**
-     * Renderiza formulario de evaluación con 2 columnas (3 criterios cada una)
+    /**
+     * Renderiza formulario de evaluación con 2 columnas
      */
     renderEvaluationForm() {
         const session = this.sessionManager.getCurrentSession();
@@ -487,135 +473,55 @@ class UIManager {
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-4">
-                        <!-- Primera columna - 3 criterios -->
                         <div class="col-md-6">
-                            <!-- Tiempo de Actividades -->
                             <label class="form-label fw-bold mb-3">El tiempo de las actividades fue:</label>
                             <div class="btn-group-evaluation mb-4" data-field="activityTime">
-                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Suficiente' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="Suficiente">
-                                    <i class="fas fa-clock"></i> Suficiente
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Adecuado' ? 'btn-primary active' : 'btn-outline-primary'}" 
-                                        data-value="Adecuado">
-                                    <i class="fas fa-check-circle"></i> Adecuado
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Moderado' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Moderado">
-                                    <i class="fas fa-exclamation-circle"></i> Moderado
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Insuficiente' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="Insuficiente">
-                                    <i class="fas fa-times-circle"></i> Insuficiente
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Suficiente' ? 'btn-success active' : 'btn-outline-success'}" data-value="Suficiente"><i class="fas fa-clock"></i> Suficiente</button>
+                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Adecuado' ? 'btn-primary active' : 'btn-outline-primary'}" data-value="Adecuado"><i class="fas fa-check-circle"></i> Adecuado</button>
+                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Moderado' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Moderado"><i class="fas fa-exclamation-circle"></i> Moderado</button>
+                                <button type="button" class="btn btn-evaluation ${session?.activityTime === 'Insuficiente' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="Insuficiente"><i class="fas fa-times-circle"></i> Insuficiente</button>
                             </div>
 
-                            <!-- Actividades Accesibles -->
                             <label class="form-label fw-bold mb-3">Las actividades fueron accesibles:</label>
                             <div class="btn-group-evaluation mb-4" data-field="activityAccessibility">
-                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="De Acuerdo">
-                                    <i class="fas fa-thumbs-up"></i> De Acuerdo
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" 
-                                        data-value="Parcialmente de acuerdo">
-                                    <i class="fas fa-adjust"></i> Parcial +
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Parcialmente en desacuerdo">
-                                    <i class="fas fa-minus-circle"></i> Parcial -
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="En desacuerdo">
-                                    <i class="fas fa-thumbs-down"></i> Desacuerdo
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" data-value="De Acuerdo"><i class="fas fa-thumbs-up"></i> De Acuerdo</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" data-value="Parcialmente de acuerdo"><i class="fas fa-adjust"></i> Parcial +</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Parcialmente en desacuerdo"><i class="fas fa-minus-circle"></i> Parcial -</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.activityAccessibility === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="En desacuerdo"><i class="fas fa-thumbs-down"></i> Desacuerdo</button>
                             </div>
 
-                            <!-- Materiales -->
                             <label class="form-label fw-bold mb-3">Los materiales fueron adecuados:</label>
                             <div class="btn-group-evaluation" data-field="classMaterials">
-                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="De Acuerdo">
-                                    <i class="fas fa-thumbs-up"></i> De Acuerdo
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" 
-                                        data-value="Parcialmente de acuerdo">
-                                    <i class="fas fa-adjust"></i> Parcial +
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Parcialmente en desacuerdo">
-                                    <i class="fas fa-minus-circle"></i> Parcial -
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="En desacuerdo">
-                                    <i class="fas fa-thumbs-down"></i> Desacuerdo
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" data-value="De Acuerdo"><i class="fas fa-thumbs-up"></i> De Acuerdo</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" data-value="Parcialmente de acuerdo"><i class="fas fa-adjust"></i> Parcial +</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Parcialmente en desacuerdo"><i class="fas fa-minus-circle"></i> Parcial -</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.classMaterials === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="En desacuerdo"><i class="fas fa-thumbs-down"></i> Desacuerdo</button>
                             </div>
                         </div>
 
-                        <!-- Segunda columna - 3 criterios -->
                         <div class="col-md-6">
-                            <!-- Espacio Físico -->
                             <label class="form-label fw-bold mb-3">El espacio físico fue adecuado:</label>
                             <div class="btn-group-evaluation mb-4" data-field="physicalSpace">
-                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="De Acuerdo">
-                                    <i class="fas fa-thumbs-up"></i> De Acuerdo
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" 
-                                        data-value="Parcialmente de acuerdo">
-                                    <i class="fas fa-adjust"></i> Parcial +
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Parcialmente en desacuerdo">
-                                    <i class="fas fa-minus-circle"></i> Parcial -
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="En desacuerdo">
-                                    <i class="fas fa-thumbs-down"></i> Desacuerdo
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'De Acuerdo' ? 'btn-success active' : 'btn-outline-success'}" data-value="De Acuerdo"><i class="fas fa-thumbs-up"></i> De Acuerdo</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'Parcialmente de acuerdo' ? 'btn-info active' : 'btn-outline-info'}" data-value="Parcialmente de acuerdo"><i class="fas fa-adjust"></i> Parcial +</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'Parcialmente en desacuerdo' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Parcialmente en desacuerdo"><i class="fas fa-minus-circle"></i> Parcial -</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.physicalSpace === 'En desacuerdo' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="En desacuerdo"><i class="fas fa-thumbs-down"></i> Desacuerdo</button>
                             </div>
 
-                            <!-- Involucramiento -->
                             <label class="form-label fw-bold mb-3">Involucramiento de estudiantes:</label>
                             <div class="btn-group-evaluation mb-4" data-field="studentInvolvement">
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Excelente' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="Excelente">
-                                    <i class="fas fa-star"></i> Excelente
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Bueno' ? 'btn-primary active' : 'btn-outline-primary'}" 
-                                        data-value="Bueno">
-                                    <i class="fas fa-thumbs-up"></i> Bueno
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Regular' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Regular">
-                                    <i class="fas fa-meh"></i> Regular
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Deficiente' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="Deficiente">
-                                    <i class="fas fa-frown"></i> Deficiente
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Excelente' ? 'btn-success active' : 'btn-outline-success'}" data-value="Excelente"><i class="fas fa-star"></i> Excelente</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Bueno' ? 'btn-primary active' : 'btn-outline-primary'}" data-value="Bueno"><i class="fas fa-thumbs-up"></i> Bueno</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Regular' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Regular"><i class="fas fa-meh"></i> Regular</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentInvolvement === 'Deficiente' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="Deficiente"><i class="fas fa-frown"></i> Deficiente</button>
                             </div>
 
-                            <!-- Actitud General -->
                             <label class="form-label fw-bold mb-3">Actitud general de estudiantes:</label>
                             <div class="btn-group-evaluation" data-field="studentAttitude">
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Excelente' ? 'btn-success active' : 'btn-outline-success'}" 
-                                        data-value="Excelente">
-                                    <i class="fas fa-star"></i> Excelente
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Bueno' ? 'btn-primary active' : 'btn-outline-primary'}" 
-                                        data-value="Bueno">
-                                    <i class="fas fa-thumbs-up"></i> Bueno
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Regular' ? 'btn-warning active' : 'btn-outline-warning'}" 
-                                        data-value="Regular">
-                                    <i class="fas fa-meh"></i> Regular
-                                </button>
-                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Deficiente' ? 'btn-danger active' : 'btn-outline-danger'}" 
-                                        data-value="Deficiente">
-                                    <i class="fas fa-frown"></i> Deficiente
-                                </button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Excelente' ? 'btn-success active' : 'btn-outline-success'}" data-value="Excelente"><i class="fas fa-star"></i> Excelente</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Bueno' ? 'btn-primary active' : 'btn-outline-primary'}" data-value="Bueno"><i class="fas fa-thumbs-up"></i> Bueno</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Regular' ? 'btn-warning active' : 'btn-outline-warning'}" data-value="Regular"><i class="fas fa-meh"></i> Regular</button>
+                                <button type="button" class="btn btn-evaluation ${evaluation.studentAttitude === 'Deficiente' ? 'btn-danger active' : 'btn-outline-danger'}" data-value="Deficiente"><i class="fas fa-frown"></i> Deficiente</button>
                             </div>
                         </div>
                     </div>
@@ -641,7 +547,7 @@ class UIManager {
         }
 
         sectionElement.innerHTML = html;
-        
+
         if (section === 'students') {
             this.bindDynamicEvents(sectionElement);
         }
@@ -660,19 +566,12 @@ class UIManager {
         }
     }
 
-    /**
-     * Acciones de botones
-     */
-    showStatistics() {
-        alert('Estadísticas: Función disponible cuando se complete el módulo de interfaz completa');
-    }
-
-    showHistory() {
-        alert('Historial: Función disponible cuando se complete el módulo de interfaz completa');
-    }
+    // =========================================================================
+    // MENÚ CONFIGURACIÓN — incluye "Limpiar Todos los Datos" y "Ver Datos"
+    // =========================================================================
 
     /**
-     * Muestra configuración
+     * Muestra modal de configuración
      */
     showConfig() {
         const modalHtml = `
@@ -685,6 +584,7 @@ class UIManager {
                         </div>
                         <div class="modal-body">
                             <div class="d-grid gap-2">
+
                                 <h6 class="text-muted border-bottom pb-2">
                                     <i class="fas fa-users"></i> Gestión de Estudiantes
                                 </h6>
@@ -694,19 +594,30 @@ class UIManager {
                                 <button class="btn btn-outline-secondary" id="config-export">
                                     <i class="fas fa-download"></i> Exportar Lista Actual
                                 </button>
-                                
+
                                 <h6 class="text-muted border-bottom pb-2 mt-3">
                                     <i class="fas fa-tools"></i> Mantenimiento
                                 </h6>
                                 <button class="btn btn-outline-danger" id="config-reset">
-                                    <i class="fas fa-eraser"></i> Reiniciar Formulario
+                                    <i class="fas fa-eraser"></i> Reiniciar Formulario Actual
                                 </button>
                                 <button class="btn btn-outline-success" id="config-backup">
                                     <i class="fas fa-save"></i> Crear Respaldo Completo
                                 </button>
                                 <button class="btn btn-outline-info" id="config-data-info">
-                                    <i class="fas fa-folder"></i> ¿Dónde están mis datos?
+                                    <i class="fas fa-folder"></i> Ver Datos Guardados
                                 </button>
+
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
+                                    <i class="fas fa-trash-alt"></i> Zona de Peligro
+                                </h6>
+                                <button class="btn btn-danger" id="config-clear-all">
+                                    <i class="fas fa-trash-alt"></i> Limpiar Todos los Datos
+                                </button>
+                                <small class="text-muted">
+                                    ⚠️ Elimina sesiones, estadísticas y grupos. No se puede deshacer.
+                                </small>
+
                             </div>
                         </div>
                     </div>
@@ -714,66 +625,239 @@ class UIManager {
             </div>
         `;
 
-        // Eliminar modal existente
         const existingModal = document.getElementById('configModal');
-        if (existingModal) {
-            existingModal.remove();
-        }
+        if (existingModal) existingModal.remove();
 
-        // Agregar nuevo modal
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        // Enlazar eventos del modal
         this.bindConfigEvents();
-        
-        // Mostrar modal
+
         const modal = new bootstrap.Modal(document.getElementById('configModal'));
         this.modals.set('config', modal);
         modal.show();
     }
 
     /**
-     * Enlaza eventos de configuración
+     * Enlaza eventos del modal de configuración
      */
     bindConfigEvents() {
-        // Importar estudiantes
         document.getElementById('config-import')?.addEventListener('click', () => {
             this.importStudents();
         });
 
-        // Exportar estudiantes
         document.getElementById('config-export')?.addEventListener('click', () => {
             this.exportStudents();
         });
 
-        // Reiniciar formulario
         document.getElementById('config-reset')?.addEventListener('click', () => {
             this.resetForm();
         });
 
-        // Crear respaldo
         document.getElementById('config-backup')?.addEventListener('click', () => {
             this.createBackup();
         });
 
-        // Información de datos
         document.getElementById('config-data-info')?.addEventListener('click', () => {
-            this.showDataInfo();
+            this.showStoredDataModal();
+        });
+
+        document.getElementById('config-clear-all')?.addEventListener('click', () => {
+            this.clearAllData();
         });
     }
 
     /**
-     * Importa estudiantes
+     * Limpia TODOS los datos guardados en localStorage
+     */
+    clearAllData() {
+        // Contar elementos antes de borrar
+        let count = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            if (localStorage.key(i).startsWith('bitacora_v2_')) count++;
+        }
+
+        if (count === 0) {
+            alert('ℹ️ No hay datos guardados para eliminar.');
+            return;
+        }
+
+        const confirmed = confirm(
+            `⚠️ ATENCIÓN: Esta acción eliminará TODOS los datos:\n\n` +
+            `• Sesiones de clase guardadas\n` +
+            `• Estadísticas de asistencia\n` +
+            `• Grupos y listas de estudiantes\n` +
+            `• Configuraciones guardadas\n\n` +
+            `Se encontraron ${count} elemento(s) guardado(s).\n\n` +
+            `¿Deseas continuar?`
+        );
+
+        if (!confirmed) return;
+
+        // Ofrecer respaldo antes de borrar
+        const wantsBackup = confirm(
+            '💾 ¿Quieres descargar un respaldo antes de borrar?\n\n' +
+            'Aceptar → Descarga respaldo y luego borra.\n' +
+            'Cancelar → Borra sin respaldo.'
+        );
+
+        if (wantsBackup) {
+            try {
+                const backup = StorageService.createBackup();
+                const dataStr = JSON.stringify(backup, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `bitacora_respaldo_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                errorHandler.handle(error, 'UIManager.clearAllData - backup');
+            }
+        }
+
+        // Ejecutar limpieza
+        const cleaned = StorageService.clear();
+
+        if (cleaned) {
+            // Limpiar sesión activa en memoria
+            this.sessionManager.clearCurrentSession();
+
+            // Reiniciar interfaz
+            const groupSelect = this.elements.get('groupSelect');
+            if (groupSelect) groupSelect.value = '';
+            this.setCurrentDateTime();
+
+            const dynamicContent = this.elements.get('dynamicContent');
+            if (dynamicContent) dynamicContent.innerHTML = '';
+
+            const sessionInfo = this.elements.get('sessionInfo');
+            if (sessionInfo) sessionInfo.style.display = 'none';
+
+            const actionButtons = this.elements.get('actionButtons');
+            if (actionButtons) actionButtons.style.display = 'none';
+
+            // Recargar selector vacío
+            this.loadGroups();
+
+            this.closeModal('config');
+            errorHandler.showSuccess(`✅ Se eliminaron ${count} elemento(s). La aplicación fue reiniciada.`);
+
+            // Mostrar mensaje de configuración inicial
+            this.showNoGroupsMessage();
+        } else {
+            errorHandler.showGlobalError('Error al limpiar los datos. Intente desde la consola del navegador.');
+        }
+    }
+
+    /**
+     * Muestra modal con lista de datos guardados en el navegador
+     */
+    showStoredDataModal() {
+        const items = [];
+        let totalSize = 0;
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key.startsWith('bitacora_v2_')) continue;
+
+            const value = localStorage.getItem(key);
+            const sizeBytes = key.length + value.length;
+            totalSize += sizeBytes;
+
+            const cleanKey = key.replace('bitacora_v2_', '');
+            let label = cleanKey;
+            let icon = '📄';
+            let badge = 'secondary';
+
+            if (cleanKey.startsWith('session_')) {
+                const parts = cleanKey.replace('session_', '').split('_');
+                label = `Sesión: ${parts[0]} del ${parts[1] || ''}`;
+                icon = '📋';
+                badge = 'primary';
+            } else if (cleanKey === 'groups') {
+                try {
+                    const groups = JSON.parse(value);
+                    const count = Object.values(groups).reduce((acc, arr) => acc + arr.length, 0);
+                    label = `Grupos (${Object.keys(groups).length} grupos, ${count} estudiantes)`;
+                } catch {
+                    label = 'Grupos de estudiantes';
+                }
+                icon = '👥';
+                badge = 'success';
+            } else if (cleanKey === 'statistics') {
+                icon = '📊';
+                label = 'Estadísticas de asistencia';
+                badge = 'info';
+            } else if (cleanKey === 'errorLogs') {
+                icon = '⚠️';
+                label = 'Registro de errores';
+                badge = 'warning';
+            }
+
+            items.push({ key: cleanKey, label, icon, badge, size: sizeBytes });
+        }
+
+        const totalKB = (totalSize / 1024).toFixed(1);
+        const maxKB = (5 * 1024).toFixed(0);
+        const usagePercent = Math.min((totalSize / (5 * 1024 * 1024)) * 100, 100).toFixed(1);
+
+        let listHtml = '';
+        if (items.length === 0) {
+            listHtml = '<p class="text-muted text-center py-3">No hay datos guardados.</p>';
+        } else {
+            listHtml = items.map(item => `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <span class="me-2">${item.icon}</span>
+                        <span>${SecurityUtils.escapeHtml(item.label)}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-muted">${(item.size / 1024).toFixed(1)} KB</small>
+                        <span class="badge bg-${item.badge} text-truncate" style="max-width:100px" title="${item.key}">${item.key}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        const content = `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <small>Espacio usado: <strong>${totalKB} KB</strong> de ${maxKB} KB</small>
+                    <small>${usagePercent}%</small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar ${usagePercent > 80 ? 'bg-danger' : 'bg-success'}"
+                         style="width: ${usagePercent}%"></div>
+                </div>
+            </div>
+            <div style="max-height: 350px; overflow-y: auto;">
+                ${listHtml}
+            </div>
+            <div class="mt-3 text-muted">
+                <small>Total: <strong>${items.length} elemento(s)</strong> guardado(s) en este navegador</small>
+            </div>
+        `;
+
+        this.closeModal('config');
+        this.showModal('data-info', '📁 Datos Guardados en Navegador', content);
+    }
+
+    // =========================================================================
+    // GESTIÓN DE ESTUDIANTES
+    // =========================================================================
+
+    /**
+     * Importa estudiantes desde JSON
      */
     importStudents() {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
-        
+
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -788,25 +872,25 @@ class UIManager {
             };
             reader.readAsText(file);
         };
-        
+
         input.click();
     }
 
     /**
-     * Exporta estudiantes
+     * Exporta estudiantes a JSON
      */
     exportStudents() {
         try {
             const groups = this.studentManager.exportGroups();
             const dataStr = JSON.stringify(groups, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
-            
+
             const link = document.createElement('a');
             link.href = url;
             link.download = 'estudiantes_grupos.json';
             link.click();
-            
+
             URL.revokeObjectURL(url);
             errorHandler.showSuccess('Grupos exportados correctamente');
         } catch (error) {
@@ -815,45 +899,45 @@ class UIManager {
     }
 
     /**
-     * Reinicia formulario
+     * Reinicia formulario actual
      */
     resetForm() {
         if (confirm('¿Está seguro de que desea reiniciar el formulario actual?')) {
             this.sessionManager.clearCurrentSession();
-            
-            // Limpiar interfaz
-            this.elements.get('groupSelect').value = '';
+
+            const groupSelect = this.elements.get('groupSelect');
+            if (groupSelect) groupSelect.value = '';
             this.setCurrentDateTime();
-            
+
             const dynamicContent = this.elements.get('dynamicContent');
             if (dynamicContent) dynamicContent.innerHTML = '';
-            
+
             const sessionInfo = this.elements.get('sessionInfo');
             if (sessionInfo) sessionInfo.style.display = 'none';
-            
+
             const actionButtons = this.elements.get('actionButtons');
             if (actionButtons) actionButtons.style.display = 'none';
-            
+
             errorHandler.showSuccess('Formulario reiniciado correctamente');
             this.closeModal('config');
         }
     }
 
     /**
-     * Crea respaldo
+     * Crea respaldo completo
      */
     createBackup() {
         try {
             const backup = StorageService.createBackup();
             const dataStr = JSON.stringify(backup, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
-            
+
             const link = document.createElement('a');
             link.href = url;
             link.download = `bitacora_backup_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
-            
+
             URL.revokeObjectURL(url);
             errorHandler.showSuccess('Respaldo creado correctamente');
         } catch (error) {
@@ -862,23 +946,7 @@ class UIManager {
     }
 
     /**
-     * Muestra información de datos
-     */
-    showDataInfo() {
-        const info = `
-            Los datos se almacenan localmente en su navegador usando localStorage.
-            
-            Ubicación: Navegador web local
-            Capacidad: Hasta 5MB
-            Persistencia: Los datos persisten hasta que se limpie el navegador
-            
-            Para hacer respaldos, use la función "Crear Respaldo Completo".
-        `;
-        alert(info);
-    }
-
-    /**
-     * Cierra modal
+     * Cierra un modal por ID
      */
     closeModal(id) {
         const modal = this.modals.get(id);
@@ -889,130 +957,103 @@ class UIManager {
     }
 
     showHelp() {
-        alert('Ayuda: Sistema v2.0 inicializado. Use Ctrl+S para guardar y Ctrl+P para PDF.');
+        alert('Ayuda: Sistema v2.0\n\nCtrl+S → Guardar sesión\nCtrl+P → Generar PDF');
     }
 
+    /**
+     * Genera PDF (sincroniza campos primero)
+     */
     generatePDF() {
-            // Sincronizar campos antes de generar PDF
-            this.syncLessonFields();
-            
-            // Pequeña pausa para asegurar que se guarde
-            setTimeout(() => {
-                this.pdfGenerator.generatePDF();
-            }, 100);
-        }
+        this.syncLessonFields();
+        setTimeout(() => {
+            this.pdfGenerator.generatePDF();
+        }, 100);
+    }
 
+    /**
+     * Guarda sesión activa
+     */
     saveSession() {
-        console.log('=== INICIO GUARDADO ===');
-        
-        // 1. Forzar sincronización inmediata de todos los campos
         const session = this.sessionManager.getCurrentSession();
         if (!session) {
             errorHandler.showGlobalError('No hay sesión activa');
             return;
         }
 
-
-        // 2. Leer y sincronizar campos de lección directamente
         const lessonFields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-    
-    lessonFields.forEach(fieldId => {
-        const element = document.getElementById(fieldId);
-        if (element && element.value.trim()) {
-            console.log(`Sincronizando ${fieldId}: "${element.value.substring(0, 50)}..."`);
-            session[fieldId] = element.value;
-        }
+        lessonFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element && element.value.trim()) {
+                session[fieldId] = element.value;
+            }
         });
 
-        // 3. Sincronizar evaluación y tiempo
-        const activityTime = document.getElementById('activityTime');
-        if (activityTime) {
-            session.activityTime = activityTime.value;
-        }
-
-        // 4. Forzar actualización de la sesión en el manager
         this.sessionManager.currentSession = session;
         this.sessionManager.markDirty();
 
-
-        // 5. Guardar
         if (this.sessionManager.saveSession(true)) {
-            // 6. Actualizar estadísticas
             this.statisticsManager.updateFromSession(session);
-            console.log('=== GUARDADO EXITOSO ===');
-        } else {
-            console.log('=== ERROR EN GUARDADO ===');
         }
     }
+
+    // =========================================================================
+    // EVENTOS DINÁMICOS
+    // =========================================================================
+
     /**
-     * Enlaza eventos dinámicos para estudiantes - SIN DUPLICADOS
+     * Enlaza eventos dinámicos para la tabla de estudiantes
      */
     bindDynamicEvents(container) {
-        // IMPORTANTE: Remover eventos existentes primero
         container.querySelectorAll('.btn-attendance, .btn-activity').forEach(btn => {
             btn.replaceWith(btn.cloneNode(true));
         });
 
-        // Re-seleccionar elementos después del clone
         const newContainer = document.querySelector('[data-section="students"]');
 
-        // Eventos de botones de asistencia
         newContainer.querySelectorAll('.btn-attendance').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const group = e.target.closest('.btn-group-attendance');
                 const studentName = group.dataset.student;
                 const state = e.target.dataset.state;
-                
-                // Desactivar otros botones del grupo
+
                 group.querySelectorAll('.btn-attendance').forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.classList.remove('btn-success', 'btn-danger', 'btn-warning');
+                    btn.classList.remove('active', 'btn-success', 'btn-danger', 'btn-warning');
                     btn.classList.add(`btn-outline-${btn.dataset.state === 'presente' ? 'success' : btn.dataset.state === 'ausente' ? 'danger' : 'warning'}`);
                 });
-                
-                // Activar botón seleccionado
+
                 e.target.classList.add('active');
                 e.target.classList.remove(`btn-outline-${state === 'presente' ? 'success' : state === 'ausente' ? 'danger' : 'warning'}`);
                 e.target.classList.add(`btn-${state === 'presente' ? 'success' : state === 'ausente' ? 'danger' : 'warning'}`);
-                
+
                 this.updateStudentState(studentName, 'estado', state);
             });
         });
 
-       // Eventos de botones de actividades - CORREGIDO PARA ÍCONOS
         newContainer.querySelectorAll('.btn-activity').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                // SIEMPRE usar el botón, nunca el ícono
-                const actualButton = e.currentTarget; // currentTarget siempre es el botón
+
+                const actualButton = e.currentTarget;
                 const studentName = actualButton.closest('.btn-group-activities').dataset.student;
                 const activity = actualButton.getAttribute('data-activity');
                 const isActive = actualButton.classList.contains('active');
-                
-                console.log('ÚNICO EVENTO - Student:', studentName, 'Activity:', activity, 'Current Active:', isActive);
-                
-                if (!activity) {
-                    console.error('Activity is undefined for button:', actualButton);
-                    return;
-                }
-                
-                // Toggle estado del botón
+
+                if (!activity) return;
+
                 if (isActive) {
                     actualButton.classList.remove('active');
                 } else {
                     actualButton.classList.add('active');
                 }
-                
+
                 this.updateStudentState(studentName, activity, !isActive);
             });
         });
 
-        // Eventos de comentarios
         newContainer.querySelectorAll('button[data-action="toggle-comment"]').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1045,7 +1086,7 @@ class UIManager {
     }
 
     /**
-     * Enlaza eventos de evaluación
+     * Enlaza eventos de botones de evaluación
      */
     bindEvaluationEvents() {
         document.querySelectorAll('.btn-evaluation').forEach(button => {
@@ -1053,23 +1094,19 @@ class UIManager {
                 const group = e.target.closest('.btn-group-evaluation');
                 const field = group.dataset.field;
                 const value = e.target.dataset.value;
-                
-                // Desactivar otros botones del grupo
+
                 group.querySelectorAll('.btn-evaluation').forEach(btn => {
                     btn.classList.remove('active');
-                    const btnValue = btn.dataset.value;
-                    const colorClass = this.getButtonColorClass(btnValue);
+                    const colorClass = this.getButtonColorClass(btn.dataset.value);
                     btn.classList.remove(`btn-${colorClass}`);
                     btn.classList.add(`btn-outline-${colorClass}`);
                 });
-                
-                // Activar botón seleccionado
+
                 const colorClass = this.getButtonColorClass(value);
                 e.target.classList.add('active');
                 e.target.classList.remove(`btn-outline-${colorClass}`);
                 e.target.classList.add(`btn-${colorClass}`);
-                
-                // Actualizar campo de evaluación
+
                 if (field === 'activityTime') {
                     this.updateSessionField(field, value);
                 } else {
@@ -1080,79 +1117,49 @@ class UIManager {
     }
 
     /**
-     * Obtiene clase de color para botón según el valor
+     * Devuelve clase de color Bootstrap según el valor de evaluación
      */
     getButtonColorClass(value) {
         const colorMap = {
-            'Excelente': 'success',
-            'De Acuerdo': 'success',
-            'Suficiente': 'success',
-            'Bueno': 'primary',
-            'Adecuado': 'primary',
+            'Excelente': 'success', 'De Acuerdo': 'success', 'Suficiente': 'success',
+            'Bueno': 'primary', 'Adecuado': 'primary',
             'Parcialmente de acuerdo': 'info',
-            'Regular': 'warning',
-            'Moderado': 'warning',
-            'Parcialmente en desacuerdo': 'warning',
-            'Deficiente': 'danger',
-            'En desacuerdo': 'danger',
-            'Insuficiente': 'danger'
+            'Regular': 'warning', 'Moderado': 'warning', 'Parcialmente en desacuerdo': 'warning',
+            'Deficiente': 'danger', 'En desacuerdo': 'danger', 'Insuficiente': 'danger'
         };
         return colorMap[value] || 'secondary';
     }
 
-   /**
-     * Enlaza eventos de formularios 
+    /**
+     * Enlaza eventos de formularios de lección
      */
     bindFormEvents() {
-        // Campos de lección con debounce
         const lessonFields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-        
+
         lessonFields.forEach(fieldId => {
             const element = document.getElementById(fieldId);
             if (element) {
                 element.addEventListener('input', (e) => {
                     this.debouncedUpdateSession(fieldId, e.target.value);
                 });
-                
                 element.addEventListener('blur', (e) => {
                     this.updateSessionField(fieldId, e.target.value);
                 });
             }
         });
-
-        // Campos de evaluación
-        const evaluationFields = ['activityTime', 'activityAccessibility', 'classMaterials', 'physicalSpace', 'studentInvolvement', 'studentAttitude'];
-        
-        evaluationFields.forEach(fieldId => {
-            const element = document.getElementById(fieldId);
-            if (element) {
-                // Los eventos ya se manejan en bindEvaluationEvents()
-            }
-        });
     }
 
-    /**
-     * Actualiza estado de estudiante
-     */
+    // =========================================================================
+    // ACCIONES DE ESTUDIANTES
+    // =========================================================================
+
     updateStudentState(studentName, field, value) {
-        console.log('=== DEBUG updateStudentState ===');
-        console.log('studentName:', studentName);
-        console.log('field:', field);
-        console.log('value:', value);
-        console.log('typeof field:', typeof field);
-        console.log('=== FIN DEBUG ===');
-        
         if (this.studentManager.updateStudentState(studentName, field, value)) {
             this.sessionManager.markDirty();
-            console.log(`Estado actualizado: ${studentName} - ${field}: ${value}`);
         }
     }
 
-    /**
-     * Alterna contenedor de comentarios
-     */
     toggleCommentContainer(studentName) {
-        // Buscar el contenedor de comentarios para este estudiante
         const containers = document.querySelectorAll('.comment-container');
         containers.forEach(container => {
             const button = container.parentElement.querySelector(`button[data-student="${studentName}"][data-action="toggle-comment"]`);
@@ -1166,9 +1173,6 @@ class UIManager {
         });
     }
 
-    /**
-     * Guarda comentario de estudiante
-     */
     saveComment(studentName, commentText) {
         const validation = Validators.validateComment(commentText);
         if (!validation.valid) {
@@ -1178,67 +1182,49 @@ class UIManager {
 
         if (this.studentManager.addStudentComment(studentName, validation.value)) {
             this.sessionManager.markDirty();
-            this.renderStudentsTable(); // Re-renderizar para mostrar el nuevo comentario
+            this.renderStudentsTable();
             errorHandler.showSuccess('Comentario agregado correctamente');
         }
     }
 
-    /**
-     * Actualiza campo de sesión con debounce
-     */
+    // =========================================================================
+    // CAMPOS DE SESIÓN
+    // =========================================================================
+
     debouncedUpdateSession(field, value) {
-        // Limpiar timer existente
         if (this.debounceTimers.has(field)) {
             clearTimeout(this.debounceTimers.get(field));
         }
-
-        // Crear nuevo timer
         const timer = setTimeout(() => {
             this.updateSessionField(field, value);
         }, 500);
-
         this.debounceTimers.set(field, timer);
     }
 
-    /**
-     * Actualiza campo de sesión 
-     */
     updateSessionField(field, value) {
-        console.log(`Intentando actualizar campo: ${field} con valor:`, value);
-        
-        if (this.sessionManager.updateSessionField(field, value)) {
-            console.log(`Campo ${field} actualizado exitosamente`);
-        } else {
-            console.error(`Error actualizando campo ${field}`);
-        }
+        this.sessionManager.updateSessionField(field, value);
     }
 
-    /**
-     * Sincroniza todos los campos de lección manualmente
-     */
     syncLessonFields() {
-    const session = this.sessionManager.getCurrentSession();
-    if (!session) return;
-    
-    const fields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-    
-    fields.forEach(fieldId => {
-        const element = document.getElementById(fieldId);
-        if (element && element.value.trim()) {
-            console.log(`Sincronizando ${fieldId}:`, element.value);
-            session[fieldId] = element.value;
-        }
-    });
+        const session = this.sessionManager.getCurrentSession();
+        if (!session) return;
 
-        
-        // Forzar guardado después de sincronizar
+        const fields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
+        fields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element && element.value.trim()) {
+                session[fieldId] = element.value;
+            }
+        });
+
         this.sessionManager.currentSession = session;
         this.sessionManager.saveSession(false);
-        console.log('Campos sincronizados y sesión guardada');
     }
-    /**
-     * Implementar las funciones de estadísticas e historial
-     */
+
+    // =========================================================================
+    // MODALES DE ESTADÍSTICAS E HISTORIAL
+    // =========================================================================
+
     showStatistics() {
         const stats = this.statisticsManager.getAllStatistics();
         this.showModal('statistics', 'Estadísticas Detalladas', this.generateStatisticsHtml(stats));
@@ -1250,7 +1236,7 @@ class UIManager {
     }
 
     /**
-     * Muestra modal 
+     * Muestra un modal genérico
      */
     showModal(id, title, content) {
         const modalHtml = `
@@ -1269,37 +1255,26 @@ class UIManager {
             </div>
         `;
 
-        // Eliminar modal existente
         const existingModal = document.getElementById(`modal-${id}`);
-        if (existingModal) {
-            existingModal.remove();
-        }
+        if (existingModal) existingModal.remove();
 
-        // Agregar nuevo modal
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        // Mostrar modal y manejar eventos correctamente
+
         const modalElement = document.getElementById(`modal-${id}`);
         const modal = new bootstrap.Modal(modalElement);
-        
-        // Manejar evento de cierre para remover aria-hidden
+
         modalElement.addEventListener('hidden.bs.modal', () => {
             modalElement.remove();
             this.modals.delete(id);
         });
-        
+
         this.modals.set(id, modal);
         modal.show();
     }
 
-    /**
-     * Genera HTML de estadísticas
-     */
     generateStatisticsHtml(stats) {
-        console.log('Estadísticas recibidas:', stats);
-        
         if (!stats || Object.keys(stats).length === 0) {
-            return '<p class="text-muted">No hay estadísticas disponibles. Guarde algunos datos primero usando el botón "Guardar Datos".</p>';
+            return '<p class="text-muted">No hay estadísticas disponibles. Guarde algunos datos primero.</p>';
         }
 
         let html = '';
@@ -1311,29 +1286,21 @@ class UIManager {
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <h5 class="text-primary">${groupStats.summary.totalEstudiantes}</h5>
-                                    <small class="text-muted">Estudiantes</small>
-                                </div>
+                            <div class="col-md-3 text-center">
+                                <h5 class="text-primary">${groupStats.summary.totalEstudiantes}</h5>
+                                <small class="text-muted">Estudiantes</small>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <h5 class="text-success">${groupStats.summary.promedioAsistencia.toFixed(1)}%</h5>
-                                    <small class="text-muted">Asistencia</small>
-                                </div>
+                            <div class="col-md-3 text-center">
+                                <h5 class="text-success">${groupStats.summary.promedioAsistencia.toFixed(1)}%</h5>
+                                <small class="text-muted">Asistencia</small>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <h5 class="text-info">${groupStats.summary.totalSesiones}</h5>
-                                    <small class="text-muted">Sesiones</small>
-                                </div>
+                            <div class="col-md-3 text-center">
+                                <h5 class="text-info">${groupStats.summary.totalSesiones}</h5>
+                                <small class="text-muted">Sesiones</small>
                             </div>
-                            <div class="col-md-3">
-                                <div class="text-center">
-                                    <h5 class="text-warning">${groupStats.summary.totalAusentes}</h5>
-                                    <small class="text-muted">Ausencias</small>
-                                </div>
+                            <div class="col-md-3 text-center">
+                                <h5 class="text-warning">${groupStats.summary.totalAusentes}</h5>
+                                <small class="text-muted">Ausencias</small>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -1350,10 +1317,9 @@ class UIManager {
                                 <tbody>`;
 
             Object.entries(groupStats.students).forEach(([studentName, studentStats]) => {
-                const attendance = studentStats.totalSesiones > 0 
+                const attendance = studentStats.totalSesiones > 0
                     ? ((studentStats.presente / studentStats.totalSesiones) * 100).toFixed(1)
                     : 0;
-
                 html += `
                     <tr>
                         <td>${SecurityUtils.escapeHtml(studentName)}</td>
@@ -1364,20 +1330,12 @@ class UIManager {
                     </tr>`;
             });
 
-            html += `
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>`;
+            html += `</tbody></table></div></div></div>`;
         });
 
         return html;
     }
 
-    /**
-     * Genera HTML de historial
-     */
     generateHistoryHtml(history) {
         if (history.length === 0) {
             return '<p class="text-muted">No hay sesiones guardadas.</p>';
@@ -1391,72 +1349,48 @@ class UIManager {
                         <h6 class="mb-1">${SecurityUtils.escapeHtml(session.grupo)} - ${session.fecha}</h6>
                         <small>${new Date(session.lastSaved).toLocaleString()}</small>
                     </div>
-                    <p class="mb-1">
-                        Hora: ${session.startTime} | 
-                        Estudiantes: ${session.presentCount}/${session.studentCount} presentes
-                    </p>
+                    <p class="mb-1">Hora: ${session.startTime} | Estudiantes: ${session.presentCount}/${session.studentCount} presentes</p>
                 </div>`;
         });
         html += '</div>';
-
         return html;
     }
-    /**
-     * Carga datos guardados en la interfaz
-     */
+
+    // =========================================================================
+    // CARGA DE DATOS GUARDADOS EN LA INTERFAZ
+    // =========================================================================
+
     loadSessionDataToUI() {
         const session = this.sessionManager.getCurrentSession();
         if (!session) return;
 
-        // Cargar campos de lección
-        const lessonFields = [
-            'lessonContent', 'planningComment', 'lessonProgress', 
-            'observations', 'improvementProposals', 'activityTime'
-        ];
-
+        const lessonFields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
         lessonFields.forEach(fieldId => {
             const element = document.getElementById(fieldId);
             const value = session[fieldId] || '';
-            if (element && value) {
-                element.value = value;
-                console.log(`Cargado ${fieldId}:`, value);
-            }
+            if (element && value) element.value = value;
         });
 
-        // Cargar campos de evaluación
         if (session.evaluation) {
-            const evaluationFields = [
-                'activityAccessibility', 'classMaterials', 'physicalSpace',
-                'studentInvolvement', 'studentAttitude'
-            ];
-
+            const evaluationFields = ['activityAccessibility', 'classMaterials', 'physicalSpace', 'studentInvolvement', 'studentAttitude'];
             evaluationFields.forEach(fieldId => {
                 const element = document.getElementById(fieldId);
                 const value = session.evaluation[fieldId];
-                if (element && value) {
-                    element.value = value;
-                }
+                if (element && value) element.value = value;
             });
         }
 
-        // Actualizar estado visual de botones de evaluación
         this.updateEvaluationButtons();
     }
 
-    /**
-     * Actualiza estado visual de botones de evaluación
-     */
     updateEvaluationButtons() {
         const session = this.sessionManager.getCurrentSession();
         if (!session) return;
 
-        // Actualizar botones de tiempo de actividad
         document.querySelectorAll('[data-field="activityTime"] .btn-evaluation').forEach(btn => {
             const value = btn.dataset.value;
             const isActive = value === session.activityTime;
-            
             btn.classList.toggle('active', isActive);
-            
             const colorClass = this.getButtonColorClass(value);
             if (isActive) {
                 btn.classList.remove(`btn-outline-${colorClass}`);
@@ -1467,15 +1401,12 @@ class UIManager {
             }
         });
 
-        // Actualizar botones de evaluación
         if (session.evaluation) {
             Object.entries(session.evaluation).forEach(([field, value]) => {
                 document.querySelectorAll(`[data-field="${field}"] .btn-evaluation`).forEach(btn => {
                     const btnValue = btn.dataset.value;
                     const isActive = btnValue === value;
-                    
                     btn.classList.toggle('active', isActive);
-                    
                     const colorClass = this.getButtonColorClass(btnValue);
                     if (isActive) {
                         btn.classList.remove(`btn-outline-${colorClass}`);
@@ -1488,5 +1419,4 @@ class UIManager {
             });
         }
     }
-    
 }
