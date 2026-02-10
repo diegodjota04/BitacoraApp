@@ -18,17 +18,24 @@ class StatisticsManager {
                 this.data = new Map();
                 
                 Object.entries(savedStats).forEach(([groupName, groupData]) => {
-                    if (groupData && typeof groupData === 'object') {
-                        this.data.set(groupName, new Map(Object.entries(groupData)));
+                   if (groupData && typeof groupData === 'object') {
+                    // Verificar que groupData no esté corrupto
+                    if (Object.keys(groupData).length === 0) {
+                        console.warn(`Grupo ${groupName} tiene datos vacíos, omitiendo`);
+                        return;
                     }
-                });
-            }
-        } catch (error) {
-            console.error('Error cargando estadísticas:', error);
-            errorHandler.handle(error, 'StatisticsManager.loadStatistics');
-            this.data = new Map();
+                    this.data.set(groupName, new Map(Object.entries(groupData)));
+                }
+            });
         }
+        console.log('Estadísticas cargadas:', this.data.size, 'grupos');
+    } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+        errorHandler.handle(error, 'StatisticsManager.loadStatistics');
+        this.data = new Map();
     }
+}
+
 
     /**
      * Guarda estadísticas 

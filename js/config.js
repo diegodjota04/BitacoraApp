@@ -43,21 +43,7 @@ const CONFIG = {
         OTRO: 'otro'
     },
     
-    // Datos por defecto de grupos
-    DEFAULT_GROUPS: {
-        "9A": [
-            "Ana García López", "Carlos Martínez Pérez", "María Rodríguez Silva",
-            "José López García", "Carmen Sánchez Ruiz", "Pedro González Martín",
-            "Laura Hernández López", "Miguel Torres Sánchez", "Isabel Moreno García",
-            "Rafael Jiménez Pérez", "Elena Vargas Silva", "Fernando Castillo López"
-        ],
-        "9B": [
-            "Sofía Ruiz Martínez", "Diego Morales García", "Valentina Castro López",
-            "Andrés Herrera Silva", "Camila Romero Pérez", "Santiago Vega Martín",
-            "Daniela Flores García", "Mateo Ramos López", "Gabriela Cruz Silva",
-            "Nicolás Mendoza Pérez", "Andrea Guerrero García", "Sebastián Rojas López"
-        ]
-    },
+  
     
     // Opciones de evaluación
     EVALUATION_OPTIONS: {

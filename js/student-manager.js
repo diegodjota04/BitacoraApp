@@ -28,6 +28,52 @@ class StudentManager {
         }
     }
 
+        initialize() {
+        this.loadGroups();
+        this.setCurrentDateTime();
+        
+        // AGREGAR ESTO:
+        // Verificar si hay grupos disponibles
+        const groups = this.studentManager.getGroupNames();
+        if (groups.length === 0) {
+            this.showNoGroupsMessage();
+        }
+    }
+
+    // AGREGAR ESTA NUEVA FUNCIÓN:
+    /**
+     * Muestra mensaje cuando no hay grupos
+     */
+    showNoGroupsMessage() {
+        const dynamicContent = this.elements.get('dynamicContent');
+        if (dynamicContent) {
+            dynamicContent.innerHTML = `
+                <div class="glass-card mb-4">
+                    <div class="card-header-custom">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Configuración Inicial Requerida</h5>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <p><strong>No hay grupos configurados en el sistema.</strong></p>
+                        <p>Para comenzar a usar la bitácora, debe importar los grupos de estudiantes:</p>
+                        <ol class="text-start">
+                            <li>Haga clic en el botón "Config"</li>
+                            <li>Seleccione "Importar Estudiantes desde JSON"</li>
+                            <li>Cargue su archivo con la estructura de grupos y estudiantes</li>
+                        </ol>
+                        <button class="btn btn-primary-custom btn-custom mt-3" id="btn-open-config">
+                            <i class="fas fa-cog"></i> Abrir Configuración
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Enlazar evento al botón
+            document.getElementById('btn-open-config')?.addEventListener('click', () => {
+                this.showConfig();
+            });
+        }
+    }
+
     /**
      * Guarda grupos en almacenamiento
      */

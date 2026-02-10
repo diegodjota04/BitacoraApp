@@ -902,7 +902,7 @@ class UIManager {
             }, 100);
         }
 
-   saveSession() {
+    saveSession() {
         console.log('=== INICIO GUARDADO ===');
         
         // 1. Forzar sincronización inmediata de todos los campos
@@ -912,15 +912,16 @@ class UIManager {
             return;
         }
 
+
         // 2. Leer y sincronizar campos de lección directamente
         const lessonFields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-        
-        lessonFields.forEach(fieldId => {
-            const element = document.getElementById(fieldId);
-            if (element && element.value.trim()) {
-                console.log(`Sincronizando ${fieldId}: "${element.value.substring(0, 50)}..."`);
-                session[fieldId] = element.value;
-            }
+    
+    lessonFields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element && element.value.trim()) {
+            console.log(`Sincronizando ${fieldId}: "${element.value.substring(0, 50)}..."`);
+            session[fieldId] = element.value;
+        }
         });
 
         // 3. Sincronizar evaluación y tiempo
@@ -932,6 +933,7 @@ class UIManager {
         // 4. Forzar actualización de la sesión en el manager
         this.sessionManager.currentSession = session;
         this.sessionManager.markDirty();
+
 
         // 5. Guardar
         if (this.sessionManager.saveSession(true)) {
@@ -1215,17 +1217,22 @@ class UIManager {
      * Sincroniza todos los campos de lección manualmente
      */
     syncLessonFields() {
-        const fields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-        
-        fields.forEach(fieldId => {
-            const element = document.getElementById(fieldId);
-            if (element && element.value.trim()) {
-                console.log(`Sincronizando ${fieldId}:`, element.value);
-                this.updateSessionField(fieldId, element.value);
-            }
-        });
+    const session = this.sessionManager.getCurrentSession();
+    if (!session) return;
+    
+    const fields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
+    
+    fields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element && element.value.trim()) {
+            console.log(`Sincronizando ${fieldId}:`, element.value);
+            session[fieldId] = element.value;
+        }
+    });
+
         
         // Forzar guardado después de sincronizar
+        this.sessionManager.currentSession = session;
         this.sessionManager.saveSession(false);
         console.log('Campos sincronizados y sesión guardada');
     }
