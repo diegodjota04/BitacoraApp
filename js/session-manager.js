@@ -105,18 +105,13 @@ class SessionManager {
             this.currentSession.lastSaved = new Date().toISOString();
 
             const sessionKey = `session_${this.currentSession.grupo}_${this.currentSession.fecha}`;
-            
+
             if (StorageService.set(sessionKey, this.currentSession)) {
                 this.isDirty = false;
-                
+
                 // Actualizar estadísticas si hay referencia disponible
-                if (window.bitacoraApp) {
-                    const statisticsManager = window.bitacoraApp.getComponent('statisticsManager');
-                    if (statisticsManager) {
-                        statisticsManager.updateFromSession(this.currentSession);
-                    }
-                }
-                
+                window.bitacoraApp?.getComponent('statisticsManager')?.updateFromSession(this.currentSession);
+
                 if (showNotification) {
                     errorHandler.showSuccess('Sesión guardada correctamente');
                 }
@@ -188,7 +183,7 @@ class SessionManager {
      */
     startAutoSave() {
         this.stopAutoSave(); // Detener cualquier intervalo previo
-        
+
         this.autoSaveInterval = setInterval(() => {
             if (this.isDirty && this.currentSession) {
                 this.saveSession(false);
@@ -325,7 +320,7 @@ class SessionManager {
         }
 
         const stats = { presente: 0, ausente: 0, tarde: 0 };
-        
+
         Object.values(this.currentSession.students).forEach(student => {
             stats[student.estado] = (stats[student.estado] || 0) + 1;
         });
@@ -344,13 +339,13 @@ class SessionManager {
         }
 
         return Object.entries(this.currentSession.students)
-            .filter(([name, student]) => {
-                return student.estado !== CONFIG.STUDENT_STATES.PRESENTE || 
-                       student.bano || 
-                       student.enfermeria || 
-                       student.otro || 
-                       (student.comentarios && student.comentarios.length > 0);
-            })
+            .filter(([, student]) =>
+                student.estado !== CONFIG.STUDENT_STATES.PRESENTE ||
+                student.bano ||
+                student.enfermeria ||
+                student.otro ||
+                student.comentarios?.length > 0
+            )
             .map(([name, student]) => ({ name, ...student }));
     }
 

@@ -58,5 +58,5 @@ Object.freeze(CONFIG);
 Object.freeze(CONFIG.COLORS);
 Object.freeze(CONFIG.STUDENT_STATES);
 Object.freeze(CONFIG.COMMENT_TYPES);
-Object.freeze(CONFIG.DEFAULT_GROUPS);
+// CONFIG.DEFAULT_GROUPS removed — groups are managed dynamically via StorageService
 Object.freeze(CONFIG.EVALUATION_OPTIONS);

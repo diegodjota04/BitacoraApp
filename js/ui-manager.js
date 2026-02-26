@@ -7,11 +7,11 @@ class UIManager {
         this.sessionManager = sessionManager;
         this.statisticsManager = statisticsManager;
         this.pdfGenerator = pdfGenerator;
-        
+
         this.elements = new Map();
         this.modals = new Map();
         this.debounceTimers = new Map();
-        
+
         this.initializeElements();
         this.bindEvents();
     }
@@ -133,6 +133,7 @@ class UIManager {
     initialize() {
         this.loadGroups();
         this.setCurrentDateTime();
+        this.loadTeacherName();
 
         const groups = this.studentManager.getGroupNames();
         if (groups.length === 0) {
@@ -216,9 +217,11 @@ class UIManager {
     }
 
     /**
-     * Maneja cambio de grupo
+     * Intenta crear sesión si los 3 campos requeridos tienen valor.
+     * Usado por los 3 manejadores de cambio de grupo/fecha/hora.
      */
-    handleGroupChange(grupo) {
+    _tryCreateSession() {
+        const grupo = this.elements.get('groupSelect')?.value;
         const fecha = this.elements.get('classDate')?.value;
         const startTime = this.elements.get('startTime')?.value;
         if (grupo && fecha && startTime) {
@@ -226,27 +229,9 @@ class UIManager {
         }
     }
 
-    /**
-     * Maneja cambio de fecha
-     */
-    handleDateChange(fecha) {
-        const grupo = this.elements.get('groupSelect')?.value;
-        const startTime = this.elements.get('startTime')?.value;
-        if (grupo && fecha && startTime) {
-            this.createSession(grupo, fecha, startTime);
-        }
-    }
-
-    /**
-     * Maneja cambio de hora
-     */
-    handleTimeChange(startTime) {
-        const grupo = this.elements.get('groupSelect')?.value;
-        const fecha = this.elements.get('classDate')?.value;
-        if (grupo && fecha && startTime) {
-            this.createSession(grupo, fecha, startTime);
-        }
-    }
+    handleGroupChange() { this._tryCreateSession(); }
+    handleDateChange() { this._tryCreateSession(); }
+    handleTimeChange() { this._tryCreateSession(); }
 
     /**
      * Crea nueva sesión
@@ -574,6 +559,7 @@ class UIManager {
      * Muestra modal de configuración
      */
     showConfig() {
+        const savedName = StorageService.get('teacher_name', 'Diego Durán-Jiménez');
         const modalHtml = `
             <div class="modal fade" id="configModal" tabindex="-1">
                 <div class="modal-dialog">
@@ -586,6 +572,19 @@ class UIManager {
                             <div class="d-grid gap-2">
 
                                 <h6 class="text-muted border-bottom pb-2">
+                                    <i class="fas fa-chalkboard-teacher"></i> Información del Profesor
+                                </h6>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                    <input type="text" class="form-control" id="config-teacher-name"
+                                        placeholder="Nombre del profesor" value="${savedName}"
+                                        maxlength="100">
+                                    <button class="btn btn-primary" id="config-save-teacher">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                </div>
+
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
                                     <i class="fas fa-users"></i> Gestión de Estudiantes
                                 </h6>
                                 <button class="btn btn-outline-primary" id="config-import">
@@ -640,131 +639,110 @@ class UIManager {
      * Enlaza eventos del modal de configuración
      */
     bindConfigEvents() {
-        document.getElementById('config-import')?.addEventListener('click', () => {
-            this.importStudents();
-        });
+        const actions = [
+            { id: 'config-import', handler: () => this.importStudents() },
+            { id: 'config-export', handler: () => this.exportStudents() },
+            { id: 'config-reset', handler: () => this.resetForm() },
+            { id: 'config-backup', handler: () => this.createBackup() },
+            { id: 'config-data-info', handler: () => this.showStoredDataModal() },
+            { id: 'config-clear-all', handler: () => this.clearAllData() }
+        ];
+        actions.forEach(({ id, handler }) =>
+            document.getElementById(id)?.addEventListener('click', handler)
+        );
 
-        document.getElementById('config-export')?.addEventListener('click', () => {
-            this.exportStudents();
+        document.getElementById('config-save-teacher')?.addEventListener('click', () => {
+            const input = document.getElementById('config-teacher-name');
+            const name = (input?.value || '').trim();
+            if (!name) {
+                errorHandler.showError('El nombre del profesor no puede estar vacío.');
+                return;
+            }
+            StorageService.set('teacher_name', name);
+            this.updateTeacherNameDisplay(name);
+            errorHandler.showSuccess(`Nombre guardado: ${name}`);
         });
+    }
 
-        document.getElementById('config-reset')?.addEventListener('click', () => {
-            this.resetForm();
-        });
+    /**
+     * Actualiza el nombre del profesor en el header
+     * @param {string} name
+     */
+    updateTeacherNameDisplay(name) {
+        const el = document.getElementById('teacherName');
+        if (el) el.textContent = `Profesor ${name}`;
+    }
 
-        document.getElementById('config-backup')?.addEventListener('click', () => {
-            this.createBackup();
-        });
-
-        document.getElementById('config-data-info')?.addEventListener('click', () => {
-            this.showStoredDataModal();
-        });
-
-        document.getElementById('config-clear-all')?.addEventListener('click', () => {
-            this.clearAllData();
-        });
+    /**
+     * Carga el nombre del profesor desde storage al iniciar
+     */
+    loadTeacherName() {
+        const name = StorageService.get('teacher_name', null);
+        if (name) this.updateTeacherNameDisplay(name);
     }
 
     /**
      * Limpia TODOS los datos guardados en localStorage
      */
     clearAllData() {
-        // Contar elementos antes de borrar
-        let count = 0;
-        for (let i = 0; i < localStorage.length; i++) {
-            if (localStorage.key(i).startsWith('bitacora_v2_')) count++;
-        }
+        const count = StorageService.getKeysMatching('').length;
 
         if (count === 0) {
-            alert('ℹ️ No hay datos guardados para eliminar.');
+            errorHandler.showGlobalError('No hay datos guardados para eliminar.');
             return;
         }
 
-        const confirmed = confirm(
-            `⚠️ ATENCIÓN: Esta acción eliminará TODOS los datos:\n\n` +
-            `• Sesiones de clase guardadas\n` +
-            `• Estadísticas de asistencia\n` +
-            `• Grupos y listas de estudiantes\n` +
-            `• Configuraciones guardadas\n\n` +
-            `Se encontraron ${count} elemento(s) guardado(s).\n\n` +
-            `¿Deseas continuar?`
-        );
+        this.showModal('confirm-clear', '⚠️ Limpiar Todos los Datos', `
+            <p>Se eliminarán <strong>${count} elemento(s)</strong> guardados:</p>
+            <ul>
+                <li>Sesiones de clase guardadas</li>
+                <li>Estadísticas de asistencia</li>
+                <li>Grupos y listas de estudiantes</li>
+                <li>Configuraciones guardadas</li>
+            </ul>
+            <p class="text-danger fw-bold">Esta acción no se puede deshacer.</p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-outline-secondary" id="confirm-backup-btn">Descargar respaldo antes</button>
+                <button class="btn btn-danger" id="confirm-delete-btn">Eliminar ahora</button>
+            </div>
+        `);
 
-        if (!confirmed) return;
+        document.getElementById('confirm-backup-btn')?.addEventListener('click', () => {
+            this.createBackup();
+        });
 
-        // Ofrecer respaldo antes de borrar
-        const wantsBackup = confirm(
-            '💾 ¿Quieres descargar un respaldo antes de borrar?\n\n' +
-            'Aceptar → Descarga respaldo y luego borra.\n' +
-            'Cancelar → Borra sin respaldo.'
-        );
-
-        if (wantsBackup) {
-            try {
-                const backup = StorageService.createBackup();
-                const dataStr = JSON.stringify(backup, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `bitacora_respaldo_${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-                URL.revokeObjectURL(url);
-            } catch (error) {
-                errorHandler.handle(error, 'UIManager.clearAllData - backup');
+        document.getElementById('confirm-delete-btn')?.addEventListener('click', () => {
+            this.closeModal('confirm-clear');
+            const cleaned = StorageService.clear();
+            if (cleaned) {
+                this.sessionManager.clearCurrentSession();
+                this.elements.get('groupSelect') && (this.elements.get('groupSelect').value = '');
+                this.setCurrentDateTime();
+                ['dynamicContent'].forEach(k => { const el = this.elements.get(k); if (el) el.innerHTML = ''; });
+                ['sessionInfo', 'actionButtons'].forEach(k => { const el = this.elements.get(k); if (el) el.style.display = 'none'; });
+                this.loadGroups();
+                this.closeModal('config');
+                errorHandler.showSuccess(`Se eliminaron ${count} elemento(s). La aplicación fue reiniciada.`);
+                this.showNoGroupsMessage();
+            } else {
+                errorHandler.showGlobalError('Error al limpiar los datos.');
             }
-        }
-
-        // Ejecutar limpieza
-        const cleaned = StorageService.clear();
-
-        if (cleaned) {
-            // Limpiar sesión activa en memoria
-            this.sessionManager.clearCurrentSession();
-
-            // Reiniciar interfaz
-            const groupSelect = this.elements.get('groupSelect');
-            if (groupSelect) groupSelect.value = '';
-            this.setCurrentDateTime();
-
-            const dynamicContent = this.elements.get('dynamicContent');
-            if (dynamicContent) dynamicContent.innerHTML = '';
-
-            const sessionInfo = this.elements.get('sessionInfo');
-            if (sessionInfo) sessionInfo.style.display = 'none';
-
-            const actionButtons = this.elements.get('actionButtons');
-            if (actionButtons) actionButtons.style.display = 'none';
-
-            // Recargar selector vacío
-            this.loadGroups();
-
-            this.closeModal('config');
-            errorHandler.showSuccess(`✅ Se eliminaron ${count} elemento(s). La aplicación fue reiniciada.`);
-
-            // Mostrar mensaje de configuración inicial
-            this.showNoGroupsMessage();
-        } else {
-            errorHandler.showGlobalError('Error al limpiar los datos. Intente desde la consola del navegador.');
-        }
+        });
     }
 
     /**
      * Muestra modal con lista de datos guardados en el navegador
      */
     showStoredDataModal() {
-        const items = [];
+        const rawKeys = StorageService.getKeysMatching('');
         let totalSize = 0;
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key.startsWith('bitacora_v2_')) continue;
-
-            const value = localStorage.getItem(key);
-            const sizeBytes = key.length + value.length;
+        const items = rawKeys.map(cleanKey => {
+            const fullKey = CONFIG.STORAGE_PREFIX + cleanKey;
+            const value = localStorage.getItem(fullKey) || '';
+            const sizeBytes = fullKey.length + value.length;
             totalSize += sizeBytes;
 
-            const cleanKey = key.replace('bitacora_v2_', '');
             let label = cleanKey;
             let icon = '📄';
             let badge = 'secondary';
@@ -794,8 +772,8 @@ class UIManager {
                 badge = 'warning';
             }
 
-            items.push({ key: cleanKey, label, icon, badge, size: sizeBytes });
-        }
+            return { key: cleanKey, label, icon, badge, size: sizeBytes };
+        });
 
         const totalKB = (totalSize / 1024).toFixed(1);
         const maxKB = (5 * 1024).toFixed(0);
@@ -902,25 +880,30 @@ class UIManager {
      * Reinicia formulario actual
      */
     resetForm() {
-        if (confirm('¿Está seguro de que desea reiniciar el formulario actual?')) {
-            this.sessionManager.clearCurrentSession();
+        this.showModal('confirm-reset', 'Reiniciar Formulario', `
+            <p>¿Está seguro de que desea reiniciar el formulario actual?</p>
+            <p class="text-muted">Los datos no guardados se perderán.</p>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-danger" id="confirm-reset-btn">Reiniciar</button>
+            </div>
+        `);
 
+        document.getElementById('confirm-reset-btn')?.addEventListener('click', () => {
+            this.closeModal('confirm-reset');
+            this.sessionManager.clearCurrentSession();
             const groupSelect = this.elements.get('groupSelect');
             if (groupSelect) groupSelect.value = '';
             this.setCurrentDateTime();
-
             const dynamicContent = this.elements.get('dynamicContent');
             if (dynamicContent) dynamicContent.innerHTML = '';
-
             const sessionInfo = this.elements.get('sessionInfo');
             if (sessionInfo) sessionInfo.style.display = 'none';
-
             const actionButtons = this.elements.get('actionButtons');
             if (actionButtons) actionButtons.style.display = 'none';
-
             errorHandler.showSuccess('Formulario reiniciado correctamente');
             this.closeModal('config');
-        }
+        });
     }
 
     /**
@@ -957,7 +940,14 @@ class UIManager {
     }
 
     showHelp() {
-        alert('Ayuda: Sistema v2.0\n\nCtrl+S → Guardar sesión\nCtrl+P → Generar PDF');
+        this.showModal('help', 'ℹ️ Ayuda — Bitácora Escolar v' + CONFIG.VERSION, `
+            <dl class="row">
+                <dt class="col-sm-4">Ctrl + S</dt>
+                <dd class="col-sm-8">Guardar sesión activa</dd>
+                <dt class="col-sm-4">Ctrl + P</dt>
+                <dd class="col-sm-8">Generar PDF de la sesión</dd>
+            </dl>
+        `);
     }
 
     /**
@@ -971,28 +961,31 @@ class UIManager {
     }
 
     /**
+     * Lee los campos del formulario de lección y los aplica a la sesión.
+     * @private
+     */
+    _readLessonFieldsFromDom() {
+        const session = this.sessionManager.getCurrentSession();
+        if (!session) return;
+        ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.value.trim()) session[id] = el.value;
+        });
+        this.sessionManager.currentSession = session;
+    }
+
+    /**
      * Guarda sesión activa
      */
     saveSession() {
-        const session = this.sessionManager.getCurrentSession();
-        if (!session) {
+        if (!this.sessionManager.getCurrentSession()) {
             errorHandler.showGlobalError('No hay sesión activa');
             return;
         }
-
-        const lessonFields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-        lessonFields.forEach(fieldId => {
-            const element = document.getElementById(fieldId);
-            if (element && element.value.trim()) {
-                session[fieldId] = element.value;
-            }
-        });
-
-        this.sessionManager.currentSession = session;
+        this._readLessonFieldsFromDom();
         this.sessionManager.markDirty();
-
         if (this.sessionManager.saveSession(true)) {
-            this.statisticsManager.updateFromSession(session);
+            this.statisticsManager.updateFromSession(this.sessionManager.getCurrentSession());
         }
     }
 
@@ -1206,18 +1199,7 @@ class UIManager {
     }
 
     syncLessonFields() {
-        const session = this.sessionManager.getCurrentSession();
-        if (!session) return;
-
-        const fields = ['lessonContent', 'planningComment', 'lessonProgress', 'observations', 'improvementProposals'];
-        fields.forEach(fieldId => {
-            const element = document.getElementById(fieldId);
-            if (element && element.value.trim()) {
-                session[fieldId] = element.value;
-            }
-        });
-
-        this.sessionManager.currentSession = session;
+        this._readLessonFieldsFromDom();
         this.sessionManager.saveSession(false);
     }
 

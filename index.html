@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,12 +10,13 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
 </head>
+
 <body>
     <div class="main-container">
         <!-- Header Principal -->
         <div class="header-main glass-card fade-in">
             <h1 class="mb-2"><i class="fas fa-graduation-cap"></i> Control de Bitácora Escolar v2.0</h1>
-            <h4 class="mb-0 opacity-75">Profesor Diego Durán-Jiménez</h4>
+            <h4 class="mb-0 opacity-75" id="teacherName">Profesor Diego Durán-Jiménez</h4>
         </div>
 
         <!-- Panel de Control -->
@@ -53,17 +55,17 @@
                         </button>
                     </div>
                 </div>
-                
+
                 <div id="sessionInfo" class="session-info hidden">
                     <div class="row">
                         <div class="col-md-8">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Sesión actual:</strong> 
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Sesión actual:</strong>
                             <span id="currentSession"></span>
                         </div>
                         <div class="col-md-4 text-end">
-                            <i class="fas fa-users"></i> 
-                            <strong>Estudiantes:</strong> 
+                            <i class="fas fa-users"></i>
+                            <strong>Estudiantes:</strong>
                             <span id="studentCount">0</span>
                         </div>
                     </div>
@@ -96,7 +98,7 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+
     <!-- Nuestros módulos - ORDEN IMPORTANTE -->
     <script src="js/config.js"></script>
     <script src="js/security.js"></script>
@@ -112,4 +114,5 @@
 
 
 </body>
+
 </html>

@@ -63,7 +63,8 @@ class PDFGenerator {
 
         // Información del profesor
         doc.setFontSize(12);
-        doc.text('Prof. Diego Durán-Jiménez', 20, 30);
+        const teacherName = StorageService.get('teacher_name', 'Diego Durán-Jiménez');
+        doc.text(`Prof. ${teacherName}`, 20, 30);
 
         // Información de sesión
         doc.setFont('helvetica', 'bold');
@@ -127,12 +128,12 @@ class PDFGenerator {
         return yPos + 50;
     }
 
-  /**
-     * Agrega sección de incidencias con comentarios integrados
-     */
+    /**
+       * Agrega sección de incidencias con comentarios integrados
+       */
     addIncidents(doc, session, yPos) {
         const studentsWithIncidents = this.sessionManager.getStudentsWithIncidents();
-        
+
         if (studentsWithIncidents.length === 0) {
             // Cuadro simple para "sin incidencias"
             doc.setFillColor(252, 252, 252);
@@ -163,7 +164,7 @@ class PDFGenerator {
         });
 
         const boxHeight = Math.min(totalLines * 8 + 35, 120);
-        
+
         // Cuadro principal
         doc.setFillColor(252, 252, 252);
         this.drawRoundedRect(doc, 15, yPos, 180, boxHeight, 5);
@@ -209,14 +210,14 @@ class PDFGenerator {
             if (student.comentarios && student.comentarios.length > 0) {
                 doc.setFont('helvetica', 'italic');
                 doc.setFontSize(8);
-                
+
                 student.comentarios.forEach(comment => {
                     const commentText = this.escapeText(comment.text);
                     const truncatedComment = commentText.length > 70 ? commentText.substring(0, 70) + '...' : commentText;
                     doc.text(`• ${truncatedComment}`, 25, incidentY);
                     incidentY += 5;
                 });
-                
+
                 incidentY += 2; // Espacio extra después de comentarios
             }
         });
@@ -231,9 +232,9 @@ class PDFGenerator {
         return yPos + boxHeight + 15;
     }
 
-   /**
-     * Agrega contenido de lección 
-     */
+    /**
+      * Agrega contenido de lección 
+      */
     addLessonContent(doc, session, yPos) {
         // Verificar si necesita nueva página
         if (yPos > 200) {
@@ -271,10 +272,10 @@ class PDFGenerator {
                 doc.addPage();
                 yPos = 20;
             }
-            yPos = this.addContentBox(doc, { 
-                label: 'PROPUESTAS DE MEJORA', 
-                value: session.improvementProposals, 
-                icon: '' 
+            yPos = this.addContentBox(doc, {
+                label: 'PROPUESTAS DE MEJORA',
+                value: session.improvementProposals,
+                icon: ''
             }, 15, yPos, 180);
         }
 
@@ -376,16 +377,12 @@ class PDFGenerator {
      * Dibuja rectángulo redondeado
      */
     drawRoundedRect(doc, x, y, w, h, r, fill = true) {
-        if (fill) {
-            doc.roundedRect(x, y, w, h, r, r, 'F');
-        } else {
-            doc.roundedRect(x, y, w, h, r, r, 'S');
-        }
+        doc.roundedRect(x, y, w, h, r, r, fill ? 'F' : 'S');
     }
 
-/**
-     * Agrega cuadro de contenido 
-     */
+    /**
+         * Agrega cuadro de contenido 
+         */
     addContentBox(doc, field, x, y, width) {
         const value = field.value || 'No especificado';
         const height = 30;

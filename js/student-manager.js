@@ -28,51 +28,7 @@ class StudentManager {
         }
     }
 
-        initialize() {
-        this.loadGroups();
-        this.setCurrentDateTime();
-        
-        // AGREGAR ESTO:
-        // Verificar si hay grupos disponibles
-        const groups = this.studentManager.getGroupNames();
-        if (groups.length === 0) {
-            this.showNoGroupsMessage();
-        }
-    }
 
-    // AGREGAR ESTA NUEVA FUNCIÓN:
-    /**
-     * Muestra mensaje cuando no hay grupos
-     */
-    showNoGroupsMessage() {
-        const dynamicContent = this.elements.get('dynamicContent');
-        if (dynamicContent) {
-            dynamicContent.innerHTML = `
-                <div class="glass-card mb-4">
-                    <div class="card-header-custom">
-                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Configuración Inicial Requerida</h5>
-                    </div>
-                    <div class="card-body p-4 text-center">
-                        <p><strong>No hay grupos configurados en el sistema.</strong></p>
-                        <p>Para comenzar a usar la bitácora, debe importar los grupos de estudiantes:</p>
-                        <ol class="text-start">
-                            <li>Haga clic en el botón "Config"</li>
-                            <li>Seleccione "Importar Estudiantes desde JSON"</li>
-                            <li>Cargue su archivo con la estructura de grupos y estudiantes</li>
-                        </ol>
-                        <button class="btn btn-primary-custom btn-custom mt-3" id="btn-open-config">
-                            <i class="fas fa-cog"></i> Abrir Configuración
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Enlazar evento al botón
-            document.getElementById('btn-open-config')?.addEventListener('click', () => {
-                this.showConfig();
-            });
-        }
-    }
 
     /**
      * Guarda grupos en almacenamiento
@@ -106,7 +62,7 @@ class StudentManager {
         if (!validation.valid) {
             throw new Error(validation.message);
         }
-        
+
         return this.groups.get(validation.value) || [];
     }
 
@@ -214,7 +170,7 @@ class StudentManager {
             }
 
             const student = this.currentStudents.get(nameValidation.value);
-            
+
             // Validar campo y valor
             switch (field) {
                 case 'estado':
@@ -223,7 +179,7 @@ class StudentManager {
                     }
                     break;
                 case 'bano':
-                case 'enfermeria': 
+                case 'enfermeria':
                 case 'otro':
                     if (typeof value !== 'boolean') {
                         throw new Error('Valor debe ser verdadero o falso');
@@ -307,7 +263,7 @@ class StudentManager {
 
             const student = this.currentStudents.get(nameValidation.value);
             const commentIndex = student.comentarios.findIndex(c => c.id === commentId);
-            
+
             if (commentIndex === -1) {
                 throw new Error('Comentario no encontrado');
             }
@@ -335,7 +291,7 @@ class StudentManager {
     loadStudentsData(studentsData) {
         try {
             this.currentStudents.clear();
-            
+
             for (const [studentName, studentData] of Object.entries(studentsData)) {
                 const nameValidation = Validators.validateStudentName(studentName);
                 if (!nameValidation.valid) {
@@ -345,13 +301,13 @@ class StudentManager {
 
                 // Validar y sanitizar datos del estudiante
                 const cleanStudentData = {
-                    estado: Object.values(CONFIG.STUDENT_STATES).includes(studentData.estado) 
-                        ? studentData.estado 
+                    estado: Object.values(CONFIG.STUDENT_STATES).includes(studentData.estado)
+                        ? studentData.estado
                         : CONFIG.STUDENT_STATES.PRESENTE,
                     bano: Boolean(studentData.bano),
                     enfermeria: Boolean(studentData.enfermeria),
                     otro: Boolean(studentData.otro),
-                    comentarios: Array.isArray(studentData.comentarios) 
+                    comentarios: Array.isArray(studentData.comentarios)
                         ? studentData.comentarios.filter(comment => {
                             const validation = Validators.validateComment(comment.text);
                             return validation.valid;
@@ -380,13 +336,10 @@ class StudentManager {
 
             // Crear respaldo antes de importar
             const backup = this.createGroupsBackup();
-            
+
             try {
-                this.groups.clear();
-                for (const [groupName, students] of Object.entries(validation.validGroups)) {
-                    this.groups.set(groupName, students);
-                }
-                
+                this.groups = new Map(Object.entries(validation.validGroups));
+
                 if (this.saveGroups()) {
                     errorHandler.showSuccess(`Se importaron ${Object.keys(validation.validGroups).length} grupos correctamente`);
                     return true;

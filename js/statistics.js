@@ -129,15 +129,7 @@ class StatisticsManager {
         }
     }
 
-    /**
-     * Guarda estadísticas (mantenido por compatibilidad, ya no es necesario
-     * porque ahora se recalculan en tiempo real desde las sesiones)
-     */
-    saveStatistics() {
-        // Las estadísticas ya no se guardan por separado.
-        // Se recalculan desde las sesiones cada vez que se necesitan.
-        return true;
-    }
+    // saveStatistics() removed — statistics are always recalculated from sessions on demand.
 
     /**
      * Obtiene estadísticas de un grupo específico
@@ -191,12 +183,12 @@ class StatisticsManager {
         let maxSesiones = 0;
 
         groupStats.forEach((studentStats) => {
-            summary.totalPresentes  += studentStats.presente;
-            summary.totalAusentes   += studentStats.ausente;
-            summary.totalTardes     += studentStats.tarde;
-            summary.totalBano       += studentStats.bano;
+            summary.totalPresentes += studentStats.presente;
+            summary.totalAusentes += studentStats.ausente;
+            summary.totalTardes += studentStats.tarde;
+            summary.totalBano += studentStats.bano;
             summary.totalEnfermeria += studentStats.enfermeria;
-            summary.totalOtro       += studentStats.otro;
+            summary.totalOtro += studentStats.otro;
 
             if (studentStats.totalSesiones > maxSesiones) {
                 maxSesiones = studentStats.totalSesiones;
@@ -210,8 +202,8 @@ class StatisticsManager {
             summary.promedioAsistencia = (summary.totalPresentes / totalPosible) * 100;
         }
 
-        summary.estudiantesConMasAusencias  = this.getTopStudentsByMetric(groupStats, 'ausente', 5);
-        summary.estudiantesConMasTardanzas  = this.getTopStudentsByMetric(groupStats, 'tarde', 5);
+        summary.estudiantesConMasAusencias = this.getTopStudentsByMetric(groupStats, 'ausente', 5);
+        summary.estudiantesConMasTardanzas = this.getTopStudentsByMetric(groupStats, 'tarde', 5);
 
         return summary;
     }

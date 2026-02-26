@@ -4,7 +4,7 @@
 class StorageService {
     /**
      * Verifica si localStorage está disponible
-     * @returns {boolean} - Verdadero si está disponible
+     * @returns {boolean}
      */
     static isAvailable() {
         try {
@@ -18,39 +18,41 @@ class StorageService {
     }
 
     /**
+     * Itera solo las claves de esta app. Devuelve array de raw keys (con prefijo).
+     * @private
+     */
+    static _appKeys() {
+        return Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
+            .filter(key => key && key.startsWith(CONFIG.STORAGE_PREFIX));
+    }
+
+    /**
      * Obtiene el tamaño usado del almacenamiento
      * @returns {number} - Bytes utilizados
      */
     static getStorageSize() {
-        let total = 0;
         try {
-            for (let key in localStorage) {
-                if (localStorage.hasOwnProperty(key) && key.startsWith(CONFIG.STORAGE_PREFIX)) {
-                    total += localStorage[key].length + key.length;
-                }
-            }
+            return this._appKeys().reduce((total, key) => total + key.length + localStorage[key].length, 0);
         } catch (error) {
             console.error('Error calculando tamaño de almacenamiento:', error);
+            return 0;
         }
-        return total;
     }
 
     /**
      * Verifica si hay espacio suficiente
      * @param {string} data - Datos a almacenar
-     * @returns {boolean} - Verdadero si hay espacio
+     * @returns {boolean}
      */
     static hasSpace(data) {
-        const currentSize = this.getStorageSize();
-        const dataSize = JSON.stringify(data).length;
-        return (currentSize + dataSize) < CONFIG.MAX_STORAGE_SIZE;
+        return (this.getStorageSize() + JSON.stringify(data).length) < CONFIG.MAX_STORAGE_SIZE;
     }
 
     /**
      * Guarda datos de forma segura
      * @param {string} key - Clave
      * @param {any} value - Valor a guardar
-     * @returns {boolean} - Verdadero si se guardó correctamente
+     * @returns {boolean}
      */
     static set(key, value) {
         if (!this.isAvailable()) {
@@ -60,11 +62,11 @@ class StorageService {
         try {
             const sanitizedKey = SecurityUtils.sanitizeAttribute(CONFIG.STORAGE_PREFIX + key);
             const serializedValue = JSON.stringify(value);
-            
+
             if (!this.hasSpace(serializedValue)) {
                 throw new Error('No hay suficiente espacio de almacenamiento');
             }
-            
+
             localStorage.setItem(sanitizedKey, serializedValue);
             return true;
         } catch (error) {
@@ -77,22 +79,15 @@ class StorageService {
      * Obtiene datos de forma segura
      * @param {string} key - Clave
      * @param {any} defaultValue - Valor por defecto
-     * @returns {any} - Valor almacenado o valor por defecto
+     * @returns {any}
      */
     static get(key, defaultValue = null) {
-        if (!this.isAvailable()) {
-            return defaultValue;
-        }
+        if (!this.isAvailable()) return defaultValue;
 
         try {
             const sanitizedKey = SecurityUtils.sanitizeAttribute(CONFIG.STORAGE_PREFIX + key);
             const item = localStorage.getItem(sanitizedKey);
-            
-            if (item === null) {
-                return defaultValue;
-            }
-            
-            return JSON.parse(item);
+            return item === null ? defaultValue : JSON.parse(item);
         } catch (error) {
             console.error('Error obteniendo datos del almacenamiento:', error);
             return defaultValue;
@@ -102,12 +97,10 @@ class StorageService {
     /**
      * Elimina datos
      * @param {string} key - Clave a eliminar
-     * @returns {boolean} - Verdadero si se eliminó
+     * @returns {boolean}
      */
     static remove(key) {
-        if (!this.isAvailable()) {
-            return false;
-        }
+        if (!this.isAvailable()) return false;
 
         try {
             const sanitizedKey = SecurityUtils.sanitizeAttribute(CONFIG.STORAGE_PREFIX + key);
@@ -120,51 +113,34 @@ class StorageService {
     }
 
     /**
-     * Obtiene todas las claves que coinciden con un patrón
+     * Obtiene todas las claves que contienen el patrón dado (sin prefijo)
      * @param {string} pattern - Patrón a buscar
-     * @returns {Array} - Array de claves
+     * @returns {Array<string>}
      */
     static getKeysMatching(pattern) {
-        if (!this.isAvailable()) {
-            return [];
-        }
+        if (!this.isAvailable()) return [];
 
-        const keys = [];
-        const fullPattern = CONFIG.STORAGE_PREFIX + pattern;
-        
         try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.includes(fullPattern)) {
-                    keys.push(key.replace(CONFIG.STORAGE_PREFIX, ''));
-                }
-            }
+            const fullPattern = CONFIG.STORAGE_PREFIX + pattern;
+            return this._appKeys()
+                .filter(key => key.includes(fullPattern))
+                .map(key => key.replace(CONFIG.STORAGE_PREFIX, ''));
         } catch (error) {
             console.error('Error obteniendo claves:', error);
+            return [];
         }
-        
-        return keys;
     }
 
     /**
      * Limpia todos los datos de la aplicación
-     * @returns {boolean} - Verdadero si se limpió correctamente
+     * @returns {boolean}
      */
     static clear() {
-        if (!this.isAvailable()) {
-            return false;
-        }
+        if (!this.isAvailable()) return false;
 
         try {
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(CONFIG.STORAGE_PREFIX)) {
-                    keysToRemove.push(key);
-                }
-            }
-            
-            keysToRemove.forEach(key => localStorage.removeItem(key));
+            // Snapshot first to avoid mutation during iteration
+            this._appKeys().forEach(key => localStorage.removeItem(key));
             return true;
         } catch (error) {
             console.error('Error limpiando almacenamiento:', error);
@@ -174,38 +150,35 @@ class StorageService {
 
     /**
      * Crea respaldo completo de datos
-     * @returns {Object} - Objeto con todos los datos
+     * @returns {Object}
      */
     static createBackup() {
         if (!this.isAvailable()) {
             throw new Error('localStorage no está disponible');
         }
 
-        const backup = {
-            version: CONFIG.VERSION,
-            timestamp: new Date().toISOString(),
-            data: {}
-        };
-
         try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(CONFIG.STORAGE_PREFIX)) {
-                    const cleanKey = key.replace(CONFIG.STORAGE_PREFIX, '');
-                    backup.data[cleanKey] = JSON.parse(localStorage.getItem(key));
-                }
-            }
+            const backup = {
+                version: CONFIG.VERSION,
+                timestamp: new Date().toISOString(),
+                data: {}
+            };
+
+            this._appKeys().forEach(key => {
+                const cleanKey = key.replace(CONFIG.STORAGE_PREFIX, '');
+                backup.data[cleanKey] = JSON.parse(localStorage.getItem(key));
+            });
+
+            return backup;
         } catch (error) {
             throw new Error('Error creando respaldo: ' + error.message);
         }
-
-        return backup;
     }
 
     /**
      * Restaura desde respaldo
      * @param {Object} backup - Datos de respaldo
-     * @returns {boolean} - Verdadero si se restauró correctamente
+     * @returns {boolean}
      */
     static restoreFromBackup(backup) {
         if (!this.isAvailable()) {
@@ -217,14 +190,10 @@ class StorageService {
         }
 
         try {
-            // Limpiar datos existentes
             this.clear();
-            
-            // Restaurar datos
             for (const [key, value] of Object.entries(backup.data)) {
                 this.set(key, value);
             }
-            
             return true;
         } catch (error) {
             throw new Error('Error restaurando respaldo: ' + error.message);
