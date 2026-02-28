@@ -5,17 +5,17 @@ const CONFIG = {
     // Configuración general
     VERSION: '2.0.0',
     APP_NAME: 'Bitácora Escolar',
-    
+
     // Intervalos y límites
     AUTO_SAVE_INTERVAL: 2 * 60 * 1000, // 2 minutos
     MAX_TEXT_LENGTH: 1000,
     MAX_COMMENT_LENGTH: 500,
     MAX_STUDENT_NAME_LENGTH: 100,
-    
+
     // Almacenamiento
     STORAGE_PREFIX: 'bitacora_v2_',
     MAX_STORAGE_SIZE: 5 * 1024 * 1024, // 5MB
-    
+
     // Colores del sistema
     COLORS: {
         PRIMARY: [37, 99, 235],
@@ -25,14 +25,14 @@ const CONFIG = {
         DANGER: [220, 38, 38],
         INFO: [8, 145, 178]
     },
-    
+
     // Estados de estudiantes
     STUDENT_STATES: {
         PRESENTE: 'presente',
         AUSENTE: 'ausente',
         TARDE: 'tarde'
     },
-    
+
     // Tipos de comentarios
     COMMENT_TYPES: {
         GENERAL: 'general',
@@ -40,11 +40,12 @@ const CONFIG = {
         TARDE: 'tarde',
         BANO: 'salidaBano',
         ENFERMERIA: 'enfermeria',
-        OTRO: 'otro'
+        OTRO: 'otro',
+        APOYOS_EDUCATIVOS: 'apoyosEducativos'
     },
-    
-  
-    
+
+
+
     // Opciones de evaluación
     EVALUATION_OPTIONS: {
         AGREEMENT: ['De Acuerdo', 'Parcialmente de acuerdo', 'Parcialmente en desacuerdo', 'En desacuerdo'],

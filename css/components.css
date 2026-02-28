@@ -369,6 +369,34 @@
     color: white;
 }
 
+/* Botón Apoyos Educativos — color morado */
+.btn-purple,
+.btn-activity[data-activity="apoyosEducativos"].active {
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+    color: white !important;
+}
+
+.btn-outline-purple,
+.btn-activity[data-activity="apoyosEducativos"]:not(.active) {
+    color: #7c3aed;
+    border-color: #7c3aed;
+    background-color: transparent;
+}
+
+.btn-activity[data-activity="apoyosEducativos"].active {
+    box-shadow: 0 3px 10px rgba(124, 58, 237, 0.35);
+}
+
+.btn-activity[data-activity="apoyosEducativos"]:not(.active):hover {
+    background-color: rgba(124, 58, 237, 0.1);
+}
+
+.comment-apoyosEducativos {
+    border-left-color: #7c3aed;
+    background: #f5f3ff;
+}
+
 /* Botones de evaluación */
 .btn-group-evaluation {
     display: flex;

@@ -173,18 +173,29 @@ class UIManager {
     }
 
     /**
-     * Carga grupos en el selector
+     * Carga grupos en el selector, filtrando por grupos visibles
      */
     loadGroups() {
         const groupSelect = this.elements.get('groupSelect');
         if (!groupSelect) return;
 
         try {
-            const groups = this.studentManager.getGroupNames();
+            const allGroups = this.studentManager.getGroupNames();
+            const visibleGroups = StorageService.get('visible_groups', null);
+            // Si no hay configuración guardada => mostrar todos
+            const groups = (visibleGroups && visibleGroups.length > 0)
+                ? allGroups.filter(g => visibleGroups.includes(g))
+                : allGroups;
+
             groupSelect.innerHTML = '<option value="" selected disabled>Seleccione un grupo</option>';
 
-            if (groups.length === 0) {
+            if (allGroups.length === 0) {
                 groupSelect.innerHTML = '<option value="" disabled>No hay grupos configurados - Use Configuración</option>';
+                return;
+            }
+
+            if (groups.length === 0) {
+                groupSelect.innerHTML = '<option value="" disabled>Ningún grupo habilitado — Active grupos en Configuración</option>';
                 return;
             }
 
@@ -351,6 +362,10 @@ class UIManager {
                             <button type="button" class="btn btn-activity ${studentData.otro ? 'btn-secondary active' : 'btn-outline-secondary'}"
                                     data-activity="otro" title="Otra actividad">
                                 <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <button type="button" class="btn btn-activity ${studentData.apoyosEducativos ? 'btn-purple active' : 'btn-outline-purple'}"
+                                    data-activity="apoyosEducativos" title="Apoyos Educativos">
+                                <i class="fas fa-hands-helping"></i>
                             </button>
                         </div>
                     </td>
@@ -560,6 +575,23 @@ class UIManager {
      */
     showConfig() {
         const savedName = StorageService.get('teacher_name', 'Diego Durán-Jiménez');
+
+        // Construir checkboxes de grupos visibles
+        const allGroups = this.studentManager.getGroupNames();
+        const visibleGroups = StorageService.get('visible_groups', null);
+        const groupsCheckboxHtml = allGroups.length === 0
+            ? '<small class="text-muted">No hay grupos importados aún.</small>'
+            : allGroups.map(g => {
+                const checked = (!visibleGroups || visibleGroups.includes(g)) ? 'checked' : '';
+                const safe = SecurityUtils.escapeHtml(g);
+                const safeVal = SecurityUtils.sanitizeAttribute(g);
+                return `<div class="form-check">
+                    <input class="form-check-input config-group-check" type="checkbox"
+                           id="grp-vis-${safeVal}" value="${safeVal}" ${checked}>
+                    <label class="form-check-label" for="grp-vis-${safeVal}">${safe}</label>
+                </div>`;
+            }).join('');
+
         const modalHtml = `
             <div class="modal fade" id="configModal" tabindex="-1">
                 <div class="modal-dialog">
@@ -593,6 +625,14 @@ class UIManager {
                                 <button class="btn btn-outline-secondary" id="config-export">
                                     <i class="fas fa-download"></i> Exportar Lista Actual
                                 </button>
+
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
+                                    <i class="fas fa-eye"></i> Grupos Visibles en el Combobox
+                                </h6>
+                                <small class="text-muted mb-1">Seleccione cuáles grupos se mostrarán al docente. Si todos están marcados, se muestran todos.</small>
+                                <div id="config-groups-checkboxes" class="ps-1">
+                                    ${groupsCheckboxHtml}
+                                </div>
 
                                 <h6 class="text-muted border-bottom pb-2 mt-3">
                                     <i class="fas fa-tools"></i> Mantenimiento
@@ -662,6 +702,24 @@ class UIManager {
             this.updateTeacherNameDisplay(name);
             errorHandler.showSuccess(`Nombre guardado: ${name}`);
         });
+
+        // Grupos visibles — guardar en tiempo real al marcar/desmarcar
+        const groupsContainer = document.getElementById('config-groups-checkboxes');
+        if (groupsContainer) {
+            groupsContainer.addEventListener('change', () => {
+                const checked = Array.from(
+                    groupsContainer.querySelectorAll('.config-group-check:checked')
+                ).map(cb => cb.value);
+                const allGroups = this.studentManager.getGroupNames();
+                // Si todos están marcados, guardar null (sin filtro)
+                if (checked.length === allGroups.length) {
+                    StorageService.set('visible_groups', null);
+                } else {
+                    StorageService.set('visible_groups', checked);
+                }
+                this.loadGroups();
+            });
+        }
     }
 
     /**
@@ -1037,6 +1095,20 @@ class UIManager {
 
                 if (!activity) return;
 
+                // Apoyos Educativos requiere comentario obligatorio
+                if (activity === 'apoyosEducativos') {
+                    if (isActive) {
+                        // Toggle off
+                        actualButton.classList.remove('active', 'btn-purple');
+                        actualButton.classList.add('btn-outline-purple');
+                        this.updateStudentState(studentName, 'apoyosEducativos', false);
+                    } else {
+                        // Abrir modal con comentario obligatorio
+                        this.showApoyosModal(studentName, actualButton);
+                    }
+                    return;
+                }
+
                 if (isActive) {
                     actualButton.classList.remove('active');
                 } else {
@@ -1150,6 +1222,86 @@ class UIManager {
         if (this.studentManager.updateStudentState(studentName, field, value)) {
             this.sessionManager.markDirty();
         }
+    }
+
+    /**
+     * Muestra modal de Apoyos Educativos con comentario obligatorio
+     * @param {string} studentName
+     * @param {HTMLElement} button — botón que activó la acción
+     */
+    showApoyosModal(studentName, button) {
+        const safeName = SecurityUtils.escapeHtml(studentName);
+        const modalId = 'apoyos-modal';
+
+        const modalHtml = `
+            <div class="modal fade" id="apoyosModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-hands-helping"></i> Apoyo Educativo
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Estudiante: <strong>${safeName}</strong></p>
+                            <label class="form-label fw-bold" for="apoyo-comment-input">
+                                Describa el apoyo educativo aplicado: <span class="text-danger">*</span>
+                            </label>
+                            <textarea id="apoyo-comment-input" class="form-control" rows="4"
+                                      maxlength="500" placeholder="Describa el apoyo educativo brindado al estudiante..."></textarea>
+                            <div id="apoyo-error" class="text-danger small mt-1" style="display:none;">El comentario es obligatorio para registrar un apoyo educativo.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button class="btn btn-primary" id="apoyo-confirm-btn">
+                                <i class="fas fa-save"></i> Confirmar Apoyo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('apoyosModal')?.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const bsModal = new bootstrap.Modal(document.getElementById('apoyosModal'));
+        this.modals.set(modalId, bsModal);
+        bsModal.show();
+
+        document.getElementById('apoyosModal').addEventListener('shown.bs.modal', () => {
+            document.getElementById('apoyo-comment-input')?.focus();
+        });
+
+        document.getElementById('apoyo-confirm-btn')?.addEventListener('click', () => {
+            const textarea = document.getElementById('apoyo-comment-input');
+            const text = (textarea?.value || '').trim();
+            const errorEl = document.getElementById('apoyo-error');
+            if (!text) {
+                errorEl.style.display = 'block';
+                textarea?.focus();
+                return;
+            }
+            errorEl.style.display = 'none';
+
+            // Guardar comentario con tipo apoyosEducativos
+            if (this.studentManager.addStudentComment(studentName, text, CONFIG.COMMENT_TYPES.APOYOS_EDUCATIVOS)) {
+                this.updateStudentState(studentName, 'apoyosEducativos', true);
+                // Marcar el botón visualmente
+                button.classList.add('active', 'btn-purple');
+                button.classList.remove('btn-outline-purple');
+                this.sessionManager.markDirty();
+                errorHandler.showSuccess(`Apoyo educativo registrado para ${studentName}`);
+            }
+            this.closeModal(modalId);
+        });
+
+        // Limpiar modal del DOM al cerrar
+        document.getElementById('apoyosModal')?.addEventListener('hidden.bs.modal', () => {
+            document.getElementById('apoyosModal')?.remove();
+            this.modals.delete(modalId);
+        });
     }
 
     toggleCommentContainer(studentName) {

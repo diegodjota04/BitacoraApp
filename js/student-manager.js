@@ -140,6 +140,7 @@ class StudentManager {
                     bano: false,
                     enfermeria: false,
                     otro: false,
+                    apoyosEducativos: false,
                     comentarios: []
                 });
             });
@@ -181,6 +182,7 @@ class StudentManager {
                 case 'bano':
                 case 'enfermeria':
                 case 'otro':
+                case 'apoyosEducativos':
                     if (typeof value !== 'boolean') {
                         throw new Error('Valor debe ser verdadero o falso');
                     }
@@ -307,6 +309,7 @@ class StudentManager {
                     bano: Boolean(studentData.bano),
                     enfermeria: Boolean(studentData.enfermeria),
                     otro: Boolean(studentData.otro),
+                    apoyosEducativos: Boolean(studentData.apoyosEducativos),
                     comentarios: Array.isArray(studentData.comentarios)
                         ? studentData.comentarios.filter(comment => {
                             const validation = Validators.validateComment(comment.text);
