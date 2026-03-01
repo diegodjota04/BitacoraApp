@@ -3,7 +3,7 @@
  * Habilita funcionamiento offline y mejora el rendimiento
  */
 
-const CACHE_NAME = 'bitacora-v2.0';
+const CACHE_NAME = 'bitacora-v2.1';
 
 // Recursos a cachear para funcionamiento offline
 const STATIC_ASSETS = [
