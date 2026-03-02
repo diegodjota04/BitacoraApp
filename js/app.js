@@ -5,7 +5,7 @@ class BitacoraApp {
     constructor() {
         this.initialized = false;
         this.components = new Map();
-        
+
         this.checkDependencies();
         this.initializeComponents();
         this.setupApplication();
@@ -22,7 +22,7 @@ class BitacoraApp {
         ];
 
         const missingDeps = requiredDependencies.filter(dep => !dep.check());
-        
+
         if (missingDeps.length > 0) {
             const errorMsg = `Dependencias faltantes: ${missingDeps.map(d => d.name).join(', ')}`;
             errorHandler.showGlobalError(errorMsg);
@@ -42,6 +42,7 @@ class BitacoraApp {
             const uiManager = new UIManager(studentManager, sessionManager, statisticsManager, pdfGenerator);
 
             this.components.set('studentManager', studentManager);
+            window.studentManager = studentManager; // Expuesto para MapaClase
             this.components.set('sessionManager', sessionManager);
             this.components.set('statisticsManager', statisticsManager);
             this.components.set('pdfGenerator', pdfGenerator);
@@ -59,15 +60,21 @@ class BitacoraApp {
     setupApplication() {
         try {
             this.setupGlobalErrorHandlers();
-            
+
             const uiManager = this.components.get('uiManager');
             uiManager.initialize();
-            
+
             this.showVersionInfo();
             this.initialized = true;
-            
+
+            // Botón Mapa de Clase
+            document.getElementById('btn-mapa-clase')?.addEventListener('click', () => {
+                const groupSelect = document.getElementById('groupSelect');
+                const group = groupSelect ? groupSelect.value : null;
+                mapaClaseUI.open(group);
+            });
             console.log(`Bitácora Escolar v${CONFIG.VERSION} inicializada correctamente`);
-            
+
         } catch (error) {
             errorHandler.handle(error, 'BitacoraApp.setupApplication');
             throw error;
@@ -80,14 +87,14 @@ class BitacoraApp {
     setupGlobalErrorHandlers() {
         window.addEventListener('error', (event) => {
             errorHandler.handle(
-                new Error(event.message), 
+                new Error(event.message),
                 `${event.filename}:${event.lineno}:${event.colno}`
             );
         });
 
         window.addEventListener('unhandledrejection', (event) => {
             errorHandler.handle(
-                new Error(event.reason), 
+                new Error(event.reason),
                 'Promesa rechazada no capturada'
             );
         });
@@ -128,11 +135,11 @@ class BitacoraApp {
 /**
  * Inicialización cuando el DOM está listo
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     try {
         console.log('DOM cargado, inicializando Bitácora Escolar...');
         window.bitacoraApp = new BitacoraApp();
-        
+
     } catch (error) {
         console.error('Error crítico inicializando aplicación:', error);
         errorHandler.showGlobalError('Error crítico al inicializar la aplicación. Recargue la página.');

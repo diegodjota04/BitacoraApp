@@ -3,7 +3,7 @@
  * Habilita funcionamiento offline y mejora el rendimiento
  */
 
-const CACHE_NAME = 'bitacora-v2.1';
+const CACHE_NAME = 'bitacora-v2.2';
 
 // Recursos a cachear para funcionamiento offline
 const STATIC_ASSETS = [
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
     './manifest.json',
     './css/main.css',
     './css/components.css',
+    './css/mapa-clase.css',
     './js/config.js',
     './js/security.js',
     './js/error-handler.js',
@@ -22,6 +23,8 @@ const STATIC_ASSETS = [
     './js/pdf-generator.js',
     './js/statistics.js',
     './js/ui-manager.js',
+    './js/mapa-clase.js',
+    './js/mapa-clase-ui.js',
     './js/app.js',
     './icons/icon-192x192.png',
     './icons/icon-512x512.png'
