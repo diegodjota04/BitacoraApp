@@ -70,6 +70,9 @@ class MapaClaseUI {
       <button class="mc-btn mc-btn-warning mc-btn-sm" id="mc-espejo-reset-btn">
         <i class="fas fa-undo"></i> Restablecer
       </button>
+      <button class="mc-btn mc-btn-pdf mc-btn-sm" id="mc-espejo-pdf-btn" title="Exportar a PDF">
+        <i class="fas fa-file-pdf"></i> PDF
+      </button>
     </div>
 
     <div class="mc-mirror-info">
@@ -101,6 +104,9 @@ class MapaClaseUI {
       </button>
       <button class="mc-btn mc-btn-ghost mc-btn-sm" id="mc-grupos-reset-btn">
         <i class="fas fa-broom"></i> Limpiar
+      </button>
+      <button class="mc-btn mc-btn-pdf mc-btn-sm" id="mc-grupos-pdf-btn" title="Exportar a PDF">
+        <i class="fas fa-file-pdf"></i> PDF
       </button>
     </div>
 
@@ -531,6 +537,16 @@ class MapaClaseUI {
             this.renderGroups();
         });
 
+        // ── PDF Espejo ────────────────────────────────────
+        document.getElementById('mc-espejo-pdf-btn')?.addEventListener('click', () => {
+            this.exportEspejoPDF();
+        });
+
+        // ── PDF Grupos ───────────────────────────────────────
+        document.getElementById('mc-grupos-pdf-btn')?.addEventListener('click', () => {
+            this.exportGruposPDF();
+        });
+
         // Añadir excepción
         document.getElementById('mc-exc-add-btn')?.addEventListener('click', () => {
             const a = document.getElementById('mc-exc-sel-a')?.value;
@@ -553,6 +569,217 @@ class MapaClaseUI {
             document.getElementById('mc-exc-sel-b').value = '';
             this._renderExceptions();
         });
+    }
+
+    /* ══════════════════════════════════════════════════════
+       EXPORTAR PDF
+    ══════════════════════════════════════════════════════ */
+
+    /**
+     * Genera y descarga un PDF del Espejo de Clase actual.
+     */
+    exportEspejoPDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) throw new Error('jsPDF no disponible');
+
+            const doc = new jsPDF();
+            const grupo = this.currentGroup || 'Grupo';
+            const fecha = new Date().toLocaleDateString('es-ES');
+            const { rows, unassigned } = this.espejo.getGridData();
+            const cols = this.espejo.columns;
+
+            // ── Encabezado ──────────────────────────────────
+            doc.setFillColor(109, 40, 217);          // morado
+            doc.rect(0, 0, 210, 38, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('ESPEJO DE CLASE', 15, 16);
+            doc.setFontSize(11);
+            doc.text(`Grupo: ${grupo}`, 15, 26);
+            doc.text(`Fecha: ${fecha}`, 15, 33);
+
+            // ── Pizarra ─────────────────────────────────────
+            doc.setFillColor(55, 65, 81);
+            doc.roundedRect(15, 45, 180, 10, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('⬛ PIZARRA / FRENTE DEL SALÓN', 105, 51.5, { align: 'center' });
+
+            // ── Grid de asientos ────────────────────────────
+            const cellW = Math.min(180 / cols, 40);
+            const cellH = 14;
+            let startY = 62;
+
+            rows.forEach((row, rIdx) => {
+                row.forEach((name, cIdx) => {
+                    const x = 15 + cIdx * cellW;
+                    const y = startY + rIdx * (cellH + 3);
+                    const seatNum = rIdx * cols + cIdx + 1;
+
+                    if (name) {
+                        doc.setFillColor(237, 233, 254);    // lila claro
+                        doc.setDrawColor(109, 40, 217);
+                    } else {
+                        doc.setFillColor(243, 244, 246);    // gris claro
+                        doc.setDrawColor(209, 213, 219);
+                    }
+                    doc.setLineWidth(0.4);
+                    doc.roundedRect(x, y, cellW - 2, cellH, 2, 2, 'FD');
+
+                    // Número de asiento
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6);
+                    doc.setTextColor(150, 150, 150);
+                    doc.text(`${seatNum}`, x + 1.5, y + 4);
+
+                    // Nombre
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(name ? 55 : 180, name ? 20 : 180, name ? 90 : 180);
+                    const displayName = name
+                        ? (name.length > Math.floor(cellW / 2.5)
+                            ? name.substring(0, Math.floor(cellW / 2.5)) + '…'
+                            : name)
+                        : '—';
+                    doc.text(displayName, x + cellW / 2 - 1, y + 10, { align: 'center' });
+                });
+            });
+
+            // ── Sin asiento ─────────────────────────────────
+            if (unassigned.length > 0) {
+                const lastY = startY + rows.length * (cellH + 3) + 8;
+                if (lastY < 250) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(109, 40, 217);
+                    doc.text('Sin asiento asignado:', 15, lastY);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(60, 60, 60);
+                    doc.setFontSize(8);
+                    doc.text(unassigned.join(' · '), 15, lastY + 6);
+                }
+            }
+
+            // ── Pie de página ────────────────────────────────
+            doc.setDrawColor(109, 40, 217);
+            doc.setLineWidth(0.5);
+            doc.line(15, 285, 195, 285);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            doc.text(`Bitácora Escolar · ${grupo} · ${fecha}`, 15, 290);
+
+            const safeName = grupo.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_');
+            doc.save(`EspejoClase_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+        } catch (err) {
+            console.error('Error exportando Espejo PDF:', err);
+            alert('No se pudo generar el PDF. Asegúrate de que jsPDF está cargado.');
+        }
+    }
+
+    /**
+     * Genera y descarga un PDF con la distribución de grupos actuales.
+     */
+    exportGruposPDF() {
+        try {
+            if (!this.grupos || this.grupos.groups.length === 0) {
+                alert('Genera los grupos primero antes de exportar.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) throw new Error('jsPDF no disponible');
+
+            const doc = new jsPDF();
+            const grupo = this.currentGroup || 'Grupo';
+            const fecha = new Date().toLocaleDateString('es-ES');
+            const groups = this.grupos.groups;
+
+            // ── Encabezado ──────────────────────────────────
+            doc.setFillColor(109, 40, 217);
+            doc.rect(0, 0, 210, 38, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('GRUPOS ALEATORIOS', 15, 16);
+            doc.setFontSize(11);
+            doc.text(`Grupo: ${grupo}`, 15, 26);
+            doc.text(`Fecha: ${fecha}  ·  ${groups.length} grupos generados`, 15, 33);
+
+            // ── Tarjetas de grupos ───────────────────────────
+            const cardsPerRow = 2;
+            const cardW = 85;
+            const cardPaddingX = 10; // Horizontal space between cards
+            const cardPaddingY = 8;  // Vertical space between cards
+            const startX = 15;
+            let currentY = 50; // Starting Y position for the first row of cards
+
+            // Calculate max card height to ensure consistent row spacing
+            const maxCardH = Math.max(...groups.map(g => 12 + g.length * 8));
+
+            groups.forEach((members, gIdx) => {
+                const col = gIdx % cardsPerRow;
+                const row = Math.floor(gIdx / cardsPerRow);
+
+                const x = startX + col * (cardW + cardPaddingX);
+                const y = currentY + row * (maxCardH + cardPaddingY);
+
+                // Check if a new page is needed
+                if (y + maxCardH > 270 && col === 0) { // Only add page if starting a new row and it overflows
+                    doc.addPage();
+                    currentY = 20; // Reset Y for new page
+                    y = currentY; // Recalculate y for the current card on the new page
+                }
+
+                const cardH = 12 + members.length * 8; // Actual height of the current card
+
+                // Card background
+                doc.setFillColor(237, 233, 254);
+                doc.setDrawColor(109, 40, 217);
+                doc.setLineWidth(0.5);
+                doc.roundedRect(x, y, cardW, cardH, 3, 3, 'FD');
+
+                // Card header
+                doc.setFillColor(109, 40, 217);
+                doc.roundedRect(x, y, cardW, 10, 3, 3, 'F');
+                doc.rect(x, y + 4, cardW, 6, 'F'); // Extend fill to cover rounded corners below
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(`Grupo ${gIdx + 1}  (${members.length} estudiantes)`, x + 4, y + 7);
+
+                // List of students
+                doc.setTextColor(40, 20, 80);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                members.forEach((name, mIdx) => {
+                    doc.text(`• ${name}`, x + 5, y + 16 + mIdx * 8);
+                });
+            });
+
+            // ── Pie de página ────────────────────────────────
+            // Position footer relative to the last card or a fixed position if few cards
+            const finalY = Math.max(currentY + Math.ceil(groups.length / cardsPerRow) * (maxCardH + cardPaddingY), 285);
+
+            doc.setDrawColor(109, 40, 217);
+            doc.setLineWidth(0.5);
+            doc.line(15, finalY, 195, finalY);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(120, 120, 120);
+            doc.text(`Bitácora Escolar · ${grupo} · ${fecha}`, 15, finalY + 5);
+
+            const safeName = grupo.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]/g, '_');
+            doc.save(`GruposAleatorios_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+        } catch (err) {
+            console.error('Error exportando Grupos PDF:', err);
+            alert('No se pudo generar el PDF. Asegúrate de que jsPDF está cargado.');
+        }
     }
 
     /* ══════════════════════════════════════════════════════

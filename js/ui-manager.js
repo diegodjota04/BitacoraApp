@@ -1419,22 +1419,30 @@ class UIManager {
                         <h6 class="mb-0">Grupo ${SecurityUtils.escapeHtml(groupName)}</h6>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-3 text-center">
-                                <h5 class="text-primary">${groupStats.summary.totalEstudiantes}</h5>
+                        <div class="row mb-2">
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 class="text-primary mb-0">${groupStats.summary.totalEstudiantes}</h5>
                                 <small class="text-muted">Estudiantes</small>
                             </div>
-                            <div class="col-md-3 text-center">
-                                <h5 class="text-success">${groupStats.summary.promedioAsistencia.toFixed(1)}%</h5>
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 class="text-success mb-0">${groupStats.summary.promedioAsistencia.toFixed(1)}%</h5>
                                 <small class="text-muted">Asistencia</small>
                             </div>
-                            <div class="col-md-3 text-center">
-                                <h5 class="text-info">${groupStats.summary.totalSesiones}</h5>
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 class="text-info mb-0">${groupStats.summary.totalSesiones}</h5>
                                 <small class="text-muted">Sesiones</small>
                             </div>
-                            <div class="col-md-3 text-center">
-                                <h5 class="text-warning">${groupStats.summary.totalAusentes}</h5>
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 class="text-warning mb-0">${groupStats.summary.totalAusentes}</h5>
                                 <small class="text-muted">Ausencias</small>
+                            </div>
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 style="color:#06b6d4" class="mb-0">🚽 ${groupStats.summary.totalBano}</h5>
+                                <small class="text-muted">Sal. Baño</small>
+                            </div>
+                            <div class="col-4 col-md-2 text-center mb-2">
+                                <h5 style="color:#f97316" class="mb-0">🏥 ${groupStats.summary.totalEnfermeria}</h5>
+                                <small class="text-muted">Sal. Enfermería</small>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -1445,6 +1453,8 @@ class UIManager {
                                         <th>Presente</th>
                                         <th>Ausente</th>
                                         <th>Tarde</th>
+                                        <th>🚽 Baño</th>
+                                        <th>🏥 Enf.</th>
                                         <th>% Asistencia</th>
                                     </tr>
                                 </thead>
@@ -1459,7 +1469,9 @@ class UIManager {
                         <td>${SecurityUtils.escapeHtml(studentName)}</td>
                         <td><span class="badge bg-success">${studentStats.presente}</span></td>
                         <td><span class="badge bg-danger">${studentStats.ausente}</span></td>
-                        <td><span class="badge bg-warning">${studentStats.tarde}</span></td>
+                        <td><span class="badge bg-warning text-dark">${studentStats.tarde}</span></td>
+                        <td><span class="badge" style="background:#06b6d4">${studentStats.bano || 0}</span></td>
+                        <td><span class="badge" style="background:#f97316">${studentStats.enfermeria || 0}</span></td>
                         <td>${attendance}%</td>
                     </tr>`;
             });

@@ -190,6 +190,16 @@
     font-size: 0.8rem;
 }
 
+.mc-btn-pdf {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+.mc-btn-pdf:hover {
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.5);
+}
+
 /* ══════════════════════════════════════
    ESPEJO DE CLASE
 ══════════════════════════════════════ */
