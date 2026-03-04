@@ -104,6 +104,11 @@ class BitacoraApp {
      * Muestra información de versión
      */
     showVersionInfo() {
+        // Inyectar versión dinámica en el header y el título de la página
+        const versionSpan = document.getElementById('app-version');
+        if (versionSpan) versionSpan.textContent = `v${CONFIG.VERSION}`;
+        document.title = `Bitácora Escolar v${CONFIG.VERSION}`;
+
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.log(`
 ╔══════════════════════════════════════╗

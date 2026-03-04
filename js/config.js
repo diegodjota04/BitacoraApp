@@ -3,7 +3,7 @@
  */
 const CONFIG = {
     // Configuración general
-    VERSION: '2.0.0',
+    VERSION: '2.3.0',
     APP_NAME: 'Bitácora Escolar',
 
     // Intervalos y límites
