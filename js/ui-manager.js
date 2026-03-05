@@ -657,6 +657,38 @@ class UIManager {
                                     ⚠️ Elimina sesiones, estadísticas y grupos. No se puede deshacer.
                                 </small>
 
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
+                                    <i class="fas fa-history"></i> Historial de Sesiones
+                                </h6>
+                                <small class="text-muted mb-2 d-block">Guarde sus sesiones en un archivo para recuperarlas si se limpia el navegador o se actualiza la app.</small>
+                                <button class="btn btn-outline-success" id="config-export-history">
+                                    <i class="fas fa-file-export"></i> Exportar Historial
+                                </button>
+                                <button class="btn btn-outline-primary" id="config-import-history">
+                                    <i class="fas fa-file-import"></i> Importar Historial
+                                </button>
+
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
+                                    <i class="fas fa-file-pdf"></i> Prefijo para Archivos PDF
+                                </h6>
+                                <small class="text-muted mb-2 d-block">Se añade al inicio del nombre del PDF al descargarlo. Ejemplo: <code>7A</code> → <code>7A_Bitacora_...</code></small>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-folder"></i></span>
+                                    <input type="text" class="form-control" id="config-pdf-folder"
+                                        placeholder="Ej: Grupo7A" maxlength="30"
+                                        value="${StorageService.get('pdf_folder', '')}">
+                                    <button class="btn btn-primary" id="config-save-pdf-folder">
+                                        <i class="fas fa-save"></i> Guardar
+                                    </button>
+                                </div>
+
+                                <h6 class="text-muted border-bottom pb-2 mt-3">
+                                    <i class="fas fa-lock"></i> Seguridad
+                                </h6>
+                                <button class="btn btn-outline-warning" id="config-change-password">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -685,11 +717,21 @@ class UIManager {
             { id: 'config-reset', handler: () => this.resetForm() },
             { id: 'config-backup', handler: () => this.createBackup() },
             { id: 'config-data-info', handler: () => this.showStoredDataModal() },
-            { id: 'config-clear-all', handler: () => this.clearAllData() }
+            { id: 'config-clear-all', handler: () => this.clearAllData() },
+            { id: 'config-export-history', handler: () => this.exportHistory() },
+            { id: 'config-import-history', handler: () => this.importHistory() },
+            { id: 'config-change-password', handler: () => this.showChangePasswordModal() },
         ];
         actions.forEach(({ id, handler }) =>
             document.getElementById(id)?.addEventListener('click', handler)
         );
+
+        // Guardar prefijo PDF
+        document.getElementById('config-save-pdf-folder')?.addEventListener('click', () => {
+            const val = (document.getElementById('config-pdf-folder')?.value || '').trim();
+            StorageService.set('pdf_folder', val);
+            errorHandler.showSuccess(val ? `Prefijo PDF guardado: "${val}"` : 'Prefijo PDF eliminado.');
+        });
 
         document.getElementById('config-save-teacher')?.addEventListener('click', () => {
             const input = document.getElementById('config-teacher-name');
@@ -984,6 +1026,97 @@ class UIManager {
         } catch (error) {
             errorHandler.handle(error, 'UIManager.createBackup');
         }
+    }
+
+    /**
+     * Exporta solo el historial de sesiones a JSON
+     */
+    exportHistory() {
+        try {
+            StorageService.exportHistoryToFile();
+            errorHandler.showSuccess('Historial exportado correctamente');
+        } catch (error) {
+            errorHandler.handle(error, 'UIManager.exportHistory');
+        }
+    }
+
+    /**
+     * Importa sesiones desde un JSON de historial
+     */
+    importHistory() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const jsonData = JSON.parse(ev.target.result);
+                    const result = StorageService.importHistoryFromFile(jsonData);
+                    errorHandler.showSuccess(
+                        `Historial importado: ${result.imported} sesión(es) recuperada(s)` +
+                        (result.skipped ? `, ${result.skipped} omitida(s) (ya existían).` : '.')
+                    );
+                } catch (err) {
+                    errorHandler.handle(err, 'UIManager.importHistory');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    /**
+     * Muestra modal para cambiar contraseña desde Config
+     */
+    showChangePasswordModal() {
+        this.closeModal('config');
+        this.showModal('change-password', '🔐 Cambiar Contraseña', `
+            <div class="mb-3">
+                <label class="form-label">Contraseña actual</label>
+                <input type="password" id="modal-chpass-current" class="form-control" placeholder="••••••••">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nueva contraseña <small class="text-muted">(mín. 8 caracteres)</small></label>
+                <input type="password" id="modal-chpass-new" class="form-control" placeholder="Nueva contraseña">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirmar nueva contraseña</label>
+                <input type="password" id="modal-chpass-confirm" class="form-control" placeholder="Repita la nueva contraseña">
+            </div>
+            <div id="modal-chpass-status" class="mb-2" style="display:none;"></div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-warning" id="modal-btn-change-pass">
+                    <i class="fas fa-key"></i> Cambiar Contraseña
+                </button>
+            </div>
+        `);
+
+        document.getElementById('modal-btn-change-pass')?.addEventListener('click', async () => {
+            const current = document.getElementById('modal-chpass-current')?.value;
+            const next = document.getElementById('modal-chpass-new')?.value;
+            const confirm = document.getElementById('modal-chpass-confirm')?.value;
+            const statusEl = document.getElementById('modal-chpass-status');
+
+            if (!current || !next || !confirm) {
+                if (statusEl) { statusEl.textContent = 'Complete todos los campos.'; statusEl.className = 'alert alert-danger'; statusEl.style.display = ''; }
+                return;
+            }
+            if (next !== confirm) {
+                if (statusEl) { statusEl.textContent = 'Las contraseñas nuevas no coinciden.'; statusEl.className = 'alert alert-danger'; statusEl.style.display = ''; }
+                return;
+            }
+            const result = await AuthService.changePassword(current, next);
+            if (result.success) {
+                if (statusEl) { statusEl.textContent = '✅ ' + result.message; statusEl.className = 'alert alert-success'; statusEl.style.display = ''; }
+                setTimeout(() => this.closeModal('change-password'), 1800);
+            } else {
+                if (statusEl) { statusEl.textContent = '❌ ' + result.message; statusEl.className = 'alert alert-danger'; statusEl.style.display = ''; }
+            }
+        });
     }
 
     /**

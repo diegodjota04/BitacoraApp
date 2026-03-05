@@ -1,0 +1,258 @@
+/**
+ * auth.css — Estilos de pantallas de autenticación
+ * Bitácora Escolar
+ */
+
+/* ─── Overlay pantalla completa ───────────────────────────────────────────── */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: authFadeIn 0.4s ease;
+}
+
+@keyframes authFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ─── Tarjeta central ─────────────────────────────────────────────────────── */
+.auth-card {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.25rem;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+    color: #e2e8f0;
+    animation: authSlideUp 0.4s cubic-bezier(.16, 1, .3, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@keyframes authSlideUp {
+    from {
+        transform: translateY(24px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ─── Logo / título ───────────────────────────────────────────────────────── */
+.auth-logo {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo i {
+    font-size: 3rem;
+    color: #a5b4fc;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.auth-logo h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ─── Sección, steps ──────────────────────────────────────────────────────── */
+.auth-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #c7d2fe;
+    margin-bottom: 0.75rem;
+}
+
+.auth-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ─── Inputs ──────────────────────────────────────────────────────────────── */
+.auth-input {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #f1f5f9 !important;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-input:focus {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+    color: #fff !important;
+    outline: none;
+}
+
+.auth-input::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.auth-input-icon {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #a5b4fc !important;
+    border-right: none !important;
+}
+
+.form-label {
+    color: #c7d2fe;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.form-text.auth-hint-small {
+    color: rgba(255, 255, 255, 0.45) !important;
+    font-size: 0.78rem;
+}
+
+/* ─── Botones ─────────────────────────────────────────────────────────────── */
+.auth-btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    padding: 0.65rem 1.5rem;
+    border-radius: 0.625rem;
+    letter-spacing: 0.02em;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+    color: #fff;
+}
+
+.auth-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.auth-btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #a5b4fc;
+    font-weight: 500;
+    padding: 0.55rem 1rem;
+    border-radius: 0.625rem;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.auth-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #c7d2fe;
+}
+
+.auth-btn-ghost-sm {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-left: none !important;
+    color: #a5b4fc !important;
+    padding: 0 0.75rem;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    transition: background 0.15s;
+}
+
+.auth-btn-ghost-sm:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #c7d2fe !important;
+}
+
+/* ─── Mensajes de estado ──────────────────────────────────────────────────── */
+.auth-status-msg {
+    border-radius: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.auth-status-msg.auth-success {
+    background: rgba(5, 150, 105, 0.2);
+    border: 1px solid rgba(5, 150, 105, 0.4);
+    color: #6ee7b7;
+}
+
+.auth-status-msg.auth-error {
+    background: rgba(220, 38, 38, 0.2);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    color: #fca5a5;
+}
+
+.auth-status-msg.auth-info {
+    background: rgba(8, 145, 178, 0.2);
+    border: 1px solid rgba(8, 145, 178, 0.4);
+    color: #67e8f9;
+}
+
+/* ─── Links dentro del card ───────────────────────────────────────────────── */
+.auth-card a {
+    color: #818cf8;
+    text-decoration: none;
+}
+
+.auth-card a:hover {
+    color: #a5b4fc;
+    text-decoration: underline;
+}
+
+/* ─── Hint de instrucciones ───────────────────────────────────────────────── */
+.auth-hint {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 1.75rem 1.25rem;
+    }
+
+    .auth-logo i {
+        font-size: 2.25rem;
+    }
+}

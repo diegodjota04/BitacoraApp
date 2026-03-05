@@ -199,4 +199,57 @@ class StorageService {
             throw new Error('Error restaurando respaldo: ' + error.message);
         }
     }
+
+    /**
+     * Exporta solo las sesiones (session_*) a un archivo JSON descargable.
+     */
+    static exportHistoryToFile() {
+        try {
+            const sessionKeys = this.getKeysMatching('session_');
+            if (sessionKeys.length === 0) {
+                throw new Error('No hay sesiones guardadas para exportar.');
+            }
+            const historyData = {
+                version: CONFIG.VERSION,
+                timestamp: new Date().toISOString(),
+                type: 'history_backup',
+                sessions: {}
+            };
+            sessionKeys.forEach(key => {
+                historyData.sessions[key] = this.get(key);
+            });
+
+            const blob = new Blob([JSON.stringify(historyData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `historial_bitacora_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            return true;
+        } catch (error) {
+            throw new Error('Error exportando historial: ' + error.message);
+        }
+    }
+
+    /**
+     * Importa sesiones desde un JSON previo.
+     * No sobreescribe configuración ni listas de estudiantes.
+     * @param {object} jsonData - Objeto ya parseado del JSON
+     * @returns {{imported: number, skipped: number}}
+     */
+    static importHistoryFromFile(jsonData) {
+        if (!jsonData || jsonData.type !== 'history_backup' || !jsonData.sessions) {
+            throw new Error('Archivo de historial inválido o incompatible.');
+        }
+        let imported = 0, skipped = 0;
+        for (const [key, value] of Object.entries(jsonData.sessions)) {
+            if (!key.startsWith('session_')) { skipped++; continue; }
+            // No sobreescribir sesiones ya existentes
+            if (this.get(key) !== null) { skipped++; continue; }
+            this.set(key, value);
+            imported++;
+        }
+        return { imported, skipped };
+    }
 }

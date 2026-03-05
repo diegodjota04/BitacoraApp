@@ -24,8 +24,8 @@
 
 /* ── Panel principal modal ── */
 .mc-panel {
-    background: linear-gradient(145deg, #1e1b4b, #2d1b69);
-    border: 1px solid rgba(167, 139, 250, 0.25);
+    background: linear-gradient(145deg, #0c1a2e, #0e3a4a);
+    border: 1px solid rgba(34, 211, 238, 0.2);
     border-radius: 20px;
     width: 100%;
     max-width: 960px;
@@ -52,20 +52,20 @@
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px 16px;
-    border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.2);
 }
 
 .mc-panel-header h2 {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #e9d5ff;
+    color: #cffafe;
     margin: 0;
 }
 
 .mc-close-btn {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #c4b5fd;
+    color: #67e8f9;
     border-radius: 10px;
     width: 36px;
     height: 36px;
@@ -87,16 +87,16 @@
     display: flex;
     gap: 6px;
     padding: 16px 24px 0;
-    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+    border-bottom: 1px solid rgba(34, 211, 238, 0.15);
 }
 
 .mc-tab-btn {
     padding: 8px 20px;
     background: transparent;
-    border: 1px solid rgba(167, 139, 250, 0.2);
+    border: 1px solid rgba(34, 211, 238, 0.2);
     border-bottom: none;
     border-radius: 10px 10px 0 0;
-    color: #a78bfa;
+    color: #67e8f9;
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
@@ -104,14 +104,14 @@
 }
 
 .mc-tab-btn.active {
-    background: rgba(124, 58, 237, 0.35);
-    color: #e9d5ff;
-    border-color: rgba(167, 139, 250, 0.45);
+    background: rgba(14, 116, 144, 0.35);
+    color: #cffafe;
+    border-color: rgba(34, 211, 238, 0.45);
 }
 
 .mc-tab-btn:hover:not(.active) {
-    background: rgba(124, 58, 237, 0.15);
-    color: #c4b5fd;
+    background: rgba(14, 116, 144, 0.15);
+    color: #a5f3fc;
 }
 
 /* ── Tab content ── */
@@ -134,7 +134,7 @@
 }
 
 .mc-toolbar label {
-    color: #c4b5fd;
+    color: #67e8f9;
     font-size: 0.88rem;
     font-weight: 600;
 }
@@ -156,7 +156,7 @@
 }
 
 .mc-btn-primary {
-    background: #7c3aed;
+    background: #0e7490;
     color: #fff;
 }
 
@@ -177,8 +177,8 @@
 
 .mc-btn-ghost {
     background: rgba(255, 255, 255, 0.07);
-    color: #c4b5fd;
-    border: 1px solid rgba(167, 139, 250, 0.25);
+    color: #67e8f9;
+    border: 1px solid rgba(34, 211, 238, 0.25);
 }
 
 .mc-btn-ghost:hover {
@@ -206,9 +206,9 @@
 
 .mc-mirror-info {
     font-size: 0.82rem;
-    color: #a78bfa;
-    background: rgba(124, 58, 237, 0.12);
-    border: 1px solid rgba(124, 58, 237, 0.3);
+    color: #67e8f9;
+    background: rgba(14, 116, 144, 0.12);
+    border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 8px;
     padding: 8px 14px;
     margin-bottom: 16px;
@@ -223,7 +223,7 @@
 }
 
 .mc-mirror-controls label {
-    color: #c4b5fd;
+    color: #67e8f9;
     font-size: 0.88rem;
     font-weight: 600;
 }
@@ -231,9 +231,9 @@
 .mc-mirror-controls input[type="number"] {
     width: 65px;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(167, 139, 250, 0.3);
+    border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 8px;
-    color: #e9d5ff;
+    color: #cffafe;
     padding: 5px 8px;
     font-size: 0.88rem;
     text-align: center;
@@ -241,7 +241,7 @@
 
 .mc-mirror-controls input[type="number"]:focus {
     outline: none;
-    border-color: #a78bfa;
+    border-color: #22d3ee;
 }
 
 /* ── Grid del espejo ── */
@@ -249,7 +249,7 @@
     display: grid;
     gap: 10px;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(34, 211, 238, 0.15);
     border-radius: 14px;
     padding: 16px;
     min-height: 200px;
@@ -258,7 +258,7 @@
 /* ── Asiento individual ── */
 .mc-seat {
     background: rgba(255, 255, 255, 0.06);
-    border: 2px solid rgba(167, 139, 250, 0.2);
+    border: 2px solid rgba(34, 211, 238, 0.2);
     border-radius: 12px;
     padding: 8px 6px;
     display: flex;
@@ -274,19 +274,19 @@
 }
 
 .mc-seat.occupied {
-    background: rgba(124, 58, 237, 0.18);
-    border-color: rgba(167, 139, 250, 0.5);
+    background: rgba(14, 116, 144, 0.18);
+    border-color: rgba(34, 211, 238, 0.5);
 }
 
 .mc-seat.empty {
     border-style: dashed;
-    border-color: rgba(167, 139, 250, 0.15);
+    border-color: rgba(34, 211, 238, 0.15);
     cursor: default;
 }
 
 .mc-seat.drag-over {
-    border-color: #a855f7;
-    background: rgba(168, 85, 247, 0.25);
+    border-color: #22d3ee;
+    background: rgba(34, 211, 238, 0.25);
     transform: scale(1.04);
 }
 
@@ -304,13 +304,13 @@
 .mc-seat .seat-name {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #e9d5ff;
+    color: #cffafe;
     line-height: 1.2;
     word-break: break-word;
 }
 
 .mc-seat.empty .seat-name {
-    color: rgba(167, 139, 250, 0.35);
+    color: rgba(34, 211, 238, 0.35);
     font-weight: 400;
 }
 
@@ -319,7 +319,7 @@
     top: 4px;
     left: 6px;
     font-size: 0.65rem;
-    color: rgba(167, 139, 250, 0.5);
+    color: rgba(34, 211, 238, 0.5);
 }
 
 /* ── Mesa del profesor ── */
@@ -339,14 +339,14 @@
 /* Zona sin asignar */
 .mc-unassigned-zone {
     background: rgba(0, 0, 0, 0.15);
-    border: 1px dashed rgba(167, 139, 250, 0.2);
+    border: 1px dashed rgba(34, 211, 238, 0.2);
     border-radius: 12px;
     padding: 12px 16px;
     margin-top: 16px;
 }
 
 .mc-unassigned-zone h6 {
-    color: #a78bfa;
+    color: #67e8f9;
     font-size: 0.82rem;
     font-weight: 700;
     margin-bottom: 10px;
@@ -361,19 +361,19 @@
 }
 
 .mc-unassigned-chip {
-    background: rgba(124, 58, 237, 0.2);
-    border: 1px solid rgba(167, 139, 250, 0.3);
+    background: rgba(14, 116, 144, 0.2);
+    border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 20px;
     padding: 4px 12px;
     font-size: 0.82rem;
     font-weight: 600;
-    color: #c4b5fd;
+    color: #a5f3fc;
     cursor: grab;
     transition: background 0.2s;
 }
 
 .mc-unassigned-chip:hover {
-    background: rgba(124, 58, 237, 0.35);
+    background: rgba(14, 116, 144, 0.35);
 }
 
 /* ══════════════════════════════════════
@@ -391,9 +391,9 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    border: 2px solid rgba(167, 139, 250, 0.3);
+    border: 2px solid rgba(34, 211, 238, 0.3);
     background: rgba(255, 255, 255, 0.05);
-    color: #a78bfa;
+    color: #67e8f9;
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
@@ -405,9 +405,9 @@
 
 .mc-size-btn.active,
 .mc-size-btn:hover {
-    background: rgba(124, 58, 237, 0.4);
-    border-color: #a855f7;
-    color: #e9d5ff;
+    background: rgba(14, 116, 144, 0.4);
+    border-color: #22d3ee;
+    color: #cffafe;
     transform: scale(1.1);
 }
 
@@ -422,14 +422,14 @@
 .mc-group-card {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 14px;
-    border: 1px solid rgba(167, 139, 250, 0.2);
+    border: 1px solid rgba(34, 211, 238, 0.2);
     overflow: hidden;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .mc-group-card.drag-target {
-    border-color: #a855f7;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.35);
 }
 
 .mc-group-header {
@@ -447,9 +447,9 @@
     min-height: 60px;
 }
 
-/* Colores para cada grupo (cíclico) */
+/* Colores para cada grupo (la primera tarjeta ahora es celeste oscuro) */
 .mc-group-card:nth-child(1) .mc-group-header {
-    background: linear-gradient(90deg, #7c3aed, #9333ea);
+    background: linear-gradient(90deg, #0e7490, #0891b2);
 }
 
 .mc-group-card:nth-child(2) .mc-group-header {
@@ -481,7 +481,7 @@
 }
 
 .mc-group-card:nth-child(9) .mc-group-header {
-    background: linear-gradient(90deg, #7c3aed, #c084fc);
+    background: linear-gradient(90deg, #0c6a7e, #0891b2);
 }
 
 .mc-group-card:nth-child(10) .mc-group-header {
@@ -499,7 +499,7 @@
     padding: 4px 10px 4px 10px;
     margin-bottom: 6px;
     font-size: 0.82rem;
-    color: #e9d5ff;
+    color: #cffafe;
     font-weight: 500;
     cursor: grab;
     transition: background 0.2s, transform 0.15s;
@@ -521,17 +521,17 @@
     font-size: 0.75rem;
 }
 
-/* ── Panel de excepciones ── */
+/* ── Panel de excepciones: fondo y contraste mejorado ── */
 .mc-exceptions-area {
-    background: rgba(220, 38, 38, 0.06);
-    border: 1px solid rgba(220, 38, 38, 0.2);
+    background: rgba(14, 116, 144, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 12px;
     padding: 16px;
     margin-top: 20px;
 }
 
 .mc-exceptions-area h6 {
-    color: #fca5a5;
+    color: #a5f3fc;
     font-size: 0.85rem;
     font-weight: 700;
     margin-bottom: 12px;
@@ -547,44 +547,51 @@
     flex-wrap: wrap;
 }
 
+/* Selects con buen contraste: fondo oscuro, texto blanco */
 .mc-exception-select {
     flex: 1;
     min-width: 120px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(220, 38, 38, 0.3);
+    background: rgba(12, 26, 46, 0.85);
+    border: 1px solid rgba(34, 211, 238, 0.4);
     border-radius: 8px;
-    color: #fecaca;
+    color: #ffffff;
     padding: 6px 10px;
     font-size: 0.85rem;
 }
 
-.mc-exception-select:focus {
-    outline: none;
-    border-color: #f87171;
+.mc-exception-select option {
+    background: #0c1a2e;
+    color: #ffffff;
 }
 
+.mc-exception-select:focus {
+    outline: none;
+    border-color: #22d3ee;
+}
+
+/* Tags de excepción: fondo oscuro + texto blanco */
 .mc-exception-tag {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(220, 38, 38, 0.3);
+    background: rgba(14, 116, 144, 0.35);
+    border: 1px solid rgba(34, 211, 238, 0.4);
     border-radius: 20px;
-    padding: 4px 12px;
+    padding: 5px 14px;
     font-size: 0.82rem;
-    color: #fca5a5;
-    font-weight: 500;
+    color: #ffffff;
+    font-weight: 600;
 }
 
 .mc-exception-tag button {
     background: none;
     border: none;
-    color: #fca5a5;
+    color: #a5f3fc;
     cursor: pointer;
     font-size: 0.75rem;
     padding: 0 2px;
     line-height: 1;
-    opacity: 0.7;
+    opacity: 0.8;
     transition: opacity 0.15s;
 }
 

@@ -448,7 +448,15 @@ class PDFGenerator {
     generateSecureFileName(session) {
         const sanitizedGroup = this.escapeText(session.grupo).replace(/[^a-zA-Z0-9]/g, '');
         const dateStr = session.fecha.replace(/-/g, '');
-        return `Bitacora_${sanitizedGroup}_${dateStr}.pdf`;
+        const baseName = `Bitacora_${sanitizedGroup}_${dateStr}.pdf`;
+
+        // Leer prefijo de carpeta configurado (ej. "Grupo7A")
+        const rawFolder = StorageService.get('pdf_folder', '');
+        if (rawFolder && typeof rawFolder === 'string') {
+            const safePrefix = rawFolder.trim().replace(/[^a-zA-Z0-9_\-]/g, '');
+            if (safePrefix) return `${safePrefix}_${baseName}`;
+        }
+        return baseName;
     }
 
     /**

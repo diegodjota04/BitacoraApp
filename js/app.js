@@ -141,12 +141,208 @@ class BitacoraApp {
  * Inicialización cuando el DOM está listo
  */
 document.addEventListener('DOMContentLoaded', function () {
-    try {
-        console.log('DOM cargado, inicializando Bitácora Escolar...');
-        window.bitacoraApp = new BitacoraApp();
 
-    } catch (error) {
-        console.error('Error crítico inicializando aplicación:', error);
-        errorHandler.showGlobalError('Error crítico al inicializar la aplicación. Recargue la página.');
+    // ─── Helpers de UI ────────────────────────────────────────────────────────
+    function showAuthScreen(id) {
+        ['auth-setup-screen', 'auth-login-screen', 'auth-change-pass-screen']
+            .forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.style.display = (s === id) ? 'flex' : 'none';
+            });
+    }
+
+    function hideAuthScreens() {
+        ['auth-setup-screen', 'auth-login-screen', 'auth-change-pass-screen']
+            .forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.style.display = 'none';
+            });
+    }
+
+    function setStatusMsg(elementId, message, type = 'info') {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.className = `auth-status-msg auth-${type}`;
+        el.textContent = message;
+        el.style.display = 'block';
+    }
+
+    function clearStatusMsg(elementId) {
+        const el = document.getElementById(elementId);
+        if (el) el.style.display = 'none';
+    }
+
+    function setLoading(btnId, loading, text = '') {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = loading;
+        if (loading) {
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${text}`;
+        } else {
+            btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+        }
+    }
+
+    function togglePasswordVisibility(inputId, btnId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(btnId);
+        if (!input || !btn) return;
+        btn.addEventListener('click', () => {
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            btn.querySelector('i').className = `fas fa-${isPass ? 'eye-slash' : 'eye'}`;
+        });
+    }
+
+    // ─── Inicializar app (post-auth) ──────────────────────────────────────────
+    function initApp() {
+        hideAuthScreens();
+        const logoutBtn = document.getElementById('btn-logout');
+        if (logoutBtn) {
+            logoutBtn.style.display = '';
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('¿Desea cerrar sesión?')) {
+                    AuthService.logout();
+                    window.location.reload();
+                }
+            });
+        }
+        try {
+            console.log('DOM cargado, inicializando Bitácora Escolar...');
+            window.bitacoraApp = new BitacoraApp();
+        } catch (error) {
+            console.error('Error crítico inicializando aplicación:', error);
+            errorHandler.showGlobalError('Error crítico al inicializar la aplicación. Recargue la página.');
+        }
+    }
+
+    // ─── Flujo: Setup inicial ─────────────────────────────────────────────────
+    function initSetupScreen() {
+        // Pre-cargar datos si ya existen
+        const cfg = AuthService.getEmailJSConfig();
+        if (cfg.serviceId) document.getElementById('setup-ejs-service').value = cfg.serviceId;
+        if (cfg.templateId) document.getElementById('setup-ejs-template').value = cfg.templateId;
+        if (cfg.publicKey) document.getElementById('setup-ejs-pubkey').value = cfg.publicKey;
+
+        // Paso 1 → Paso 2
+        document.getElementById('btn-setup-save-emailjs')?.addEventListener('click', () => {
+            const svc = document.getElementById('setup-ejs-service')?.value.trim();
+            const tpl = document.getElementById('setup-ejs-template')?.value.trim();
+            const key = document.getElementById('setup-ejs-pubkey')?.value.trim();
+            if (!svc || !tpl || !key) {
+                setStatusMsg('setup-step-status', 'Complete todos los campos de EmailJS.', 'error');
+                document.getElementById('setup-step-status').style.display = 'block';
+                return;
+            }
+            AuthService.saveEmailJSConfig(svc, tpl, key);
+            document.getElementById('setup-step-emailjs').style.display = 'none';
+            document.getElementById('setup-step-provision').style.display = '';
+            clearStatusMsg('setup-step-status');
+        });
+
+        // Volver al paso 1
+        document.getElementById('btn-setup-back-emailjs')?.addEventListener('click', () => {
+            document.getElementById('setup-step-provision').style.display = 'none';
+            document.getElementById('setup-step-emailjs').style.display = '';
+        });
+
+        // Paso 2 → Enviar correo
+        document.getElementById('btn-setup-provision')?.addEventListener('click', async () => {
+            const email = document.getElementById('setup-email')?.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                setStatusMsg('setup-step-status', 'Ingrese un correo electrónico válido.', 'error');
+                document.getElementById('setup-step-status').style.display = 'block';
+                return;
+            }
+            setLoading('btn-setup-provision', true, 'Enviando correo...');
+            clearStatusMsg('setup-step-status');
+            const result = await AuthService.provisionUser(email);
+            setLoading('btn-setup-provision', false);
+            const statusEl = document.getElementById('setup-step-status');
+            if (statusEl) statusEl.style.display = 'block';
+            if (result.success) {
+                setStatusMsg('setup-step-status', `✅ ${result.message} — Ahora inicie sesión.`, 'success');
+                setTimeout(() => showAuthScreen('auth-login-screen'), 3000);
+            } else {
+                setStatusMsg('setup-step-status', `❌ ${result.message}`, 'error');
+            }
+        });
+    }
+
+    // ─── Flujo: Login ─────────────────────────────────────────────────────────
+    function initLoginScreen() {
+        togglePasswordVisibility('login-password', 'btn-toggle-login-pass');
+
+        const doLogin = async () => {
+            const user = document.getElementById('login-username')?.value.trim();
+            const pass = document.getElementById('login-password')?.value;
+            if (!user || !pass) {
+                setStatusMsg('login-status', 'Ingrese usuario y contraseña.', 'error');
+                return;
+            }
+            setLoading('btn-login', true, 'Verificando...');
+            clearStatusMsg('login-status');
+            const result = await AuthService.login(user, pass);
+            setLoading('btn-login', false);
+            if (result.success) {
+                if (result.firstLogin) {
+                    showAuthScreen('auth-change-pass-screen');
+                } else {
+                    initApp();
+                }
+            } else {
+                setStatusMsg('login-status', `❌ ${result.message}`, 'error');
+            }
+        };
+
+        document.getElementById('btn-login')?.addEventListener('click', doLogin);
+        document.getElementById('login-password')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+    }
+
+    // ─── Flujo: Cambio de contraseña obligatorio ──────────────────────────────
+    function initChangePasScreen() {
+        togglePasswordVisibility('chpass-new', 'btn-toggle-new-pass');
+
+        document.getElementById('btn-change-pass')?.addEventListener('click', async () => {
+            const current = document.getElementById('chpass-current')?.value;
+            const next = document.getElementById('chpass-new')?.value;
+            const confirm = document.getElementById('chpass-confirm')?.value;
+            clearStatusMsg('chpass-status');
+
+            if (!current || !next || !confirm) {
+                setStatusMsg('chpass-status', 'Complete todos los campos.', 'error');
+                return;
+            }
+            if (next !== confirm) {
+                setStatusMsg('chpass-status', 'Las contraseñas nuevas no coinciden.', 'error');
+                return;
+            }
+            setLoading('btn-change-pass', true, 'Guardando...');
+            const result = await AuthService.changePassword(current, next);
+            setLoading('btn-change-pass', false);
+            if (result.success) {
+                setStatusMsg('chpass-status', `✅ ${result.message}`, 'success');
+                setTimeout(() => initApp(), 1500);
+            } else {
+                setStatusMsg('chpass-status', `❌ ${result.message}`, 'error');
+            }
+        });
+    }
+
+    // ─── Punto de entrada: decidir qué pantalla mostrar ────────────────────────
+    if (AuthService.isAuthenticated()) {
+        initApp();
+    } else if (!AuthService.isConfigured()) {
+        initSetupScreen();
+        showAuthScreen('auth-setup-screen');
+    } else {
+        initLoginScreen();
+        initChangePasScreen();
+        showAuthScreen('auth-login-screen');
+        // Enfocar campo de usuario
+        setTimeout(() => document.getElementById('login-username')?.focus(), 200);
     }
 });

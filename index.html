@@ -21,14 +21,24 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/mapa-clase.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
 
 <body>
     <div class="main-container">
         <!-- Header Principal -->
         <div class="header-main glass-card fade-in">
-            <h1 class="mb-2"><i class="fas fa-graduation-cap"></i> Control de Bitácora Escolar <span id="app-version" style="font-size:0.65em;opacity:0.75;font-weight:500;"></span></h1>
-            <h4 class="mb-0 opacity-75" id="teacherName">Profesor Diego Durán-Jiménez</h4>
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="mb-2"><i class="fas fa-graduation-cap"></i> Control de Bitácora Escolar <span
+                            id="app-version" style="font-size:0.65em;opacity:0.75;font-weight:500;"></span></h1>
+                    <h4 class="mb-0 opacity-75" id="teacherName">Profesor Diego Durán-Jiménez</h4>
+                </div>
+                <button class="btn btn-outline-light btn-sm mt-1" id="btn-logout" title="Cerrar Sesión"
+                    style="display:none;">
+                    <i class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">Cerrar Sesión</span>
+                </button>
+            </div>
         </div>
 
         <!-- Panel de Control -->
@@ -65,7 +75,7 @@
                         <button class="btn btn-custom btn-secondary-custom" id="btn-config">
                             <i class="fas fa-cog"></i> Config
                         </button>
-                        <button class="btn btn-custom btn-secondary-custom" id="btn-mapa-clase">
+                        <button class="btn btn-custom btn-teal-custom" id="btn-mapa-clase">
                             <i class="fas fa-map-marked-alt"></i> Mapa de Clase
                         </button>
                     </div>
@@ -102,8 +112,154 @@
         </div>
     </div>
 
+
+    <!-- ═══════════════════════════════════════════════════════
+         PANTALLAS DE AUTENTICACIÓN (gestionadas por app.js)
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- 1. Setup Inicial (primera vez: sin credenciales) -->
+    <div id="auth-setup-screen" class="auth-overlay" style="display:none;">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Bitácora Escolar</h2>
+                <p class="auth-subtitle">Configuración Inicial del Sistema</p>
+            </div>
+
+            <!-- Paso 1: Configurar EmailJS -->
+            <div id="setup-step-emailjs">
+                <h5 class="auth-section-title"><span class="auth-step-badge">1</span> Configurar Servicio de Correo
+                    (EmailJS)</h5>
+                <p class="auth-hint">
+                    Cree una cuenta gratuita en <a href="https://emailjs.com" target="_blank">emailjs.com</a>,
+                    conecte su correo y cree una plantilla. Ingrese los datos aquí.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label">Service ID</label>
+                    <input type="text" id="setup-ejs-service" class="form-control auth-input"
+                        placeholder="service_xxxxxxx">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Template ID</label>
+                    <input type="text" id="setup-ejs-template" class="form-control auth-input"
+                        placeholder="template_xxxxxxx">
+                    <div class="form-text auth-hint-small">
+                        La plantilla debe incluir las variables: <code>{{to_email}}</code>, <code>{{username}}</code>,
+                        <code>{{password}}</code>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Public Key</label>
+                    <input type="text" id="setup-ejs-pubkey" class="form-control auth-input"
+                        placeholder="xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <button class="btn auth-btn-primary w-100" id="btn-setup-save-emailjs">
+                    <i class="fas fa-check"></i> Guardar configuración de correo
+                </button>
+            </div>
+
+            <!-- Paso 2: Provisionar usuario -->
+            <div id="setup-step-provision" style="display:none;">
+                <h5 class="auth-section-title"><span class="auth-step-badge">2</span> Crear Usuario</h5>
+                <p class="auth-hint">Ingrese el correo del docente. El sistema generará un usuario y contraseña temporal
+                    y los enviará al correo indicado.</p>
+                <div class="mb-3">
+                    <label class="form-label">Correo electrónico del docente</label>
+                    <input type="email" id="setup-email" class="form-control auth-input"
+                        placeholder="docente@correo.com">
+                </div>
+                <button class="btn auth-btn-primary w-100" id="btn-setup-provision">
+                    <i class="fas fa-paper-plane"></i> Enviar credenciales por correo
+                </button>
+                <button class="btn auth-btn-ghost w-100 mt-2" id="btn-setup-back-emailjs">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+            </div>
+
+            <div id="setup-step-status" class="auth-status-msg" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 2. Pantalla de Login -->
+    <div id="auth-login-screen" class="auth-overlay" style="display:none;">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Bitácora Escolar</h2>
+                <p class="auth-subtitle">Inicie sesión para continuar</p>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Usuario</label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-user"></i></span>
+                    <input type="text" id="login-username" class="form-control auth-input" placeholder="su usuario"
+                        autocomplete="username">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="login-password" class="form-control auth-input" placeholder="••••••••"
+                        autocomplete="current-password">
+                    <button class="btn auth-btn-ghost-sm" type="button" id="btn-toggle-login-pass" tabindex="-1">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button class="btn auth-btn-primary w-100" id="btn-login">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+            </button>
+            <div id="login-status" class="auth-status-msg mt-3" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 3. Cambio de Contraseña Obligatorio (primer acceso) -->
+    <div id="auth-change-pass-screen" class="auth-overlay" style="display:none;">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-key"></i>
+                <h2>Cambio de Contraseña</h2>
+                <p class="auth-subtitle">Por seguridad, debe establecer una nueva contraseña antes de continuar.</p>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contraseña temporal (recibida por correo)</label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-lock-open"></i></span>
+                    <input type="password" id="chpass-current" class="form-control auth-input"
+                        placeholder="Contraseña actual">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nueva contraseña <small class="text-muted">(mínimo 8
+                        caracteres)</small></label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="chpass-new" class="form-control auth-input"
+                        placeholder="Nueva contraseña">
+                    <button class="btn auth-btn-ghost-sm" type="button" id="btn-toggle-new-pass" tabindex="-1">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Confirmar nueva contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="chpass-confirm" class="form-control auth-input"
+                        placeholder="Repita la nueva contraseña">
+                </div>
+            </div>
+            <button class="btn auth-btn-primary w-100" id="btn-change-pass">
+                <i class="fas fa-check-circle"></i> Establecer nueva contraseña
+            </button>
+            <div id="chpass-status" class="auth-status-msg mt-3" style="display:none;"></div>
+        </div>
+    </div>
+
     <!-- Modales -->
     <div id="modals-container"></div>
+
 
     <!-- Botón de ayuda flotante -->
     <button class="floating-btn" id="btn-help" title="Ayuda y Guía de Uso">
@@ -113,6 +269,7 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
     <!-- Nuestros módulos - ORDEN IMPORTANTE -->
     <script src="js/config.js"></script>
@@ -120,6 +277,7 @@
     <script src="js/error-handler.js"></script>
     <script src="js/validators.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/student-manager.js"></script>
     <script src="js/session-manager.js"></script>
     <script src="js/pdf-generator.js"></script>
