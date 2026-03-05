@@ -81,8 +81,8 @@ class UIManager {
             { id: 'btn-history', handler: () => this.showHistory() },
             { id: 'btn-config', handler: () => this.showConfig() },
             { id: 'btn-pdf', handler: () => this.generatePDF() },
-            { id: 'btn-save', handler: () => this.saveSession() },
-            { id: 'btn-help', handler: () => this.showHelp() }
+            { id: 'btn-save', handler: () => this.saveSession() }
+            // btn-help es manejado globalmente en app.js (funciona antes y después del login)
         ];
 
         buttonEvents.forEach(({ id, handler }) => {

@@ -142,6 +142,110 @@ class BitacoraApp {
  */
 document.addEventListener('DOMContentLoaded', function () {
 
+    // ─── Botón de ayuda — funciona antes y después del login ─────────────────
+    document.getElementById('btn-help')?.addEventListener('click', () => {
+        // Si UIManager ya está activo, usar su método completo
+        if (window.bitacoraApp) {
+            const uiManager = window.bitacoraApp.getComponent('uiManager');
+            if (uiManager) { uiManager.showHelp(); return; }
+        }
+        // Fallback: mostrar modal de ayuda directamente (durante auth)
+        _showHelpModal();
+    });
+
+    function _showHelpModal() {
+        const existing = document.getElementById('helpModal');
+        if (existing) { new bootstrap.Modal(existing).show(); return; }
+
+        const modalHtml = `
+        <div class="modal fade" id="helpModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-book-open"></i> Manual de Usuario — Bitácora Escolar <span class="badge bg-secondary">${typeof CONFIG !== 'undefined' ? CONFIG.VERSION : ''}</span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 class="text-primary border-bottom pb-1 mt-2"><i class="fas fa-sign-in-alt"></i> 1. Primer Acceso</h6>
+                        <ol class="small">
+                            <li>Al abrir la app por primera vez, aparece la pantalla de <strong>Configuración Inicial</strong>.</li>
+                            <li>Ingrese su <strong>correo institucional</strong> y presione <em>"Enviar credenciales"</em>.</li>
+                            <li>Revise su correo: recibirá su <strong>nombre de usuario</strong> y una <strong>contraseña temporal</strong>.</li>
+                            <li>Use esas credenciales para iniciar sesión en la pantalla de Login.</li>
+                            <li>El sistema le pedirá <strong>establecer una nueva contraseña</strong> (mínimo 8 caracteres). Este paso es obligatorio.</li>
+                        </ol>
+                        <div class="alert alert-info py-2 small">💡 El <strong>usuario</strong> es la parte de su correo antes del @. Ej: <code>maria.gomez@colegio.cr</code> → usuario: <code>mariagomez</code></div>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-cog"></i> 2. Configuración Inicial del Sistema</h6>
+                        <ol class="small">
+                            <li><strong>Nombre del profesor:</strong> ingrese su nombre completo y presione <em>Guardar</em>. Aparecerá en el encabezado y en los PDFs.</li>
+                            <li><strong>Importar estudiantes:</strong> cargue el archivo <code>.json</code> con los grupos y listas de estudiantes.</li>
+                            <li><strong>Grupos visibles:</strong> seleccione cuáles grupos aparecen en el selector principal.</li>
+                            <li><strong>Prefijo PDF</strong> (opcional): un código que se añade al nombre del archivo PDF descargado.</li>
+                        </ol>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-graduation-cap"></i> 3. Registrar una Clase</h6>
+                        <ol class="small">
+                            <li>En el <strong>Panel de Control</strong>, seleccione el <em>Grupo</em>, la <em>Fecha</em> y la <em>Hora de inicio</em>. La sesión se crea automáticamente.</li>
+                            <li>Marque la asistencia: <span class="badge bg-success">Presente</span> <span class="badge bg-danger">Ausente</span> <span class="badge bg-warning text-dark">Tarde</span>.</li>
+                            <li>Registre actividades especiales: 🚻 Baño &nbsp;|&nbsp; ➕ Enfermería &nbsp;|&nbsp; ⋯ Otra &nbsp;|&nbsp; 🤝 Apoyos Educativos (requiere comentario obligatorio).</li>
+                            <li>Complete los campos de la <strong>Lección</strong> y la sección de <strong>Evaluación</strong>.</li>
+                            <li>Presione <strong>Guardar Datos</strong> o use <kbd>Ctrl+S</kbd>.</li>
+                        </ol>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-file-pdf"></i> 4. Generar Bitácora PDF</h6>
+                        <ol class="small">
+                            <li>Con una sesión activa, presione <strong>"Generar Bitácora PDF"</strong> o use <kbd>Ctrl+P</kbd>.</li>
+                            <li>El PDF se descargará con el nombre: <code>[Prefijo]_Bitacora_[Grupo]_[Fecha].pdf</code></li>
+                        </ol>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-history"></i> 5. Historial y Estadísticas</h6>
+                        <ul class="small">
+                            <li>Botón <strong>Historial</strong>: vea, recargue y genere PDF de sesiones anteriores. Filtre por grupo o rango de fechas.</li>
+                            <li>Botón <strong>Estadísticas</strong>: resúmenes de asistencia por estudiante y por grupo.</li>
+                        </ul>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-map-marked-alt"></i> 6. Mapa de Clase</h6>
+                        <ul class="small">
+                            <li><strong>Espejo de Clase:</strong> representación visual del aula con los estudiantes del grupo activo.</li>
+                            <li><strong>Grupos Aleatorios:</strong> genere grupos de trabajo (tamaño 2–6) con excepciones configurables.</li>
+                        </ul>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-save"></i> 7. Respaldo y Recuperación</h6>
+                        <table class="table table-sm small">
+                            <thead class="table-light"><tr><th>Acción</th><th>Dónde</th><th>Qué hace</th></tr></thead>
+                            <tbody>
+                                <tr><td>Exportar Historial</td><td>Config</td><td>Descarga todas las sesiones en <code>.json</code></td></tr>
+                                <tr><td>Importar Historial</td><td>Config</td><td>Recupera sesiones desde un <code>.json</code> previo, sin sobreescribir</td></tr>
+                                <tr><td>Crear Respaldo Completo</td><td>Config</td><td>Exporta todo el contenido del navegador</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="alert alert-warning py-2 small">⚠️ Los datos se guardan <strong>solo en este navegador y dispositivo</strong>. Exporte el historial regularmente y guárdelo en OneDrive o una unidad segura.</div>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-lock"></i> 8. Seguridad</h6>
+                        <ul class="small">
+                            <li><strong>Cambiar contraseña:</strong> Config → Seguridad → Cambiar Contraseña.</li>
+                            <li><strong>Cerrar sesión:</strong> botón <i class="fas fa-sign-out-alt"></i> en la esquina superior derecha.</li>
+                            <li>Tras <strong>5 intentos fallidos</strong> de login, el acceso se bloquea por 30 segundos.</li>
+                        </ul>
+
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-keyboard"></i> 9. Atajos de Teclado</h6>
+                        <dl class="row small">
+                            <dt class="col-sm-3"><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd class="col-sm-9">Guardar sesión activa</dd>
+                            <dt class="col-sm-3"><kbd>Ctrl</kbd>+<kbd>P</kbd></dt><dd class="col-sm-9">Generar PDF de la sesión</dd>
+                        </dl>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        new bootstrap.Modal(document.getElementById('helpModal')).show();
+    }
+
     // ─── Helpers de UI ────────────────────────────────────────────────────────
     function showAuthScreen(id) {
         ['auth-setup-screen', 'auth-login-screen', 'auth-change-pass-screen']
