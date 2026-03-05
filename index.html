@@ -123,60 +123,25 @@
             <div class="auth-logo">
                 <i class="fas fa-graduation-cap"></i>
                 <h2>Bitácora Escolar</h2>
-                <p class="auth-subtitle">Configuración Inicial del Sistema</p>
+                <p class="auth-subtitle">Configuración Inicial</p>
             </div>
 
-            <!-- Paso 1: Configurar EmailJS -->
-            <div id="setup-step-emailjs">
-                <h5 class="auth-section-title"><span class="auth-step-badge">1</span> Configurar Servicio de Correo
-                    (EmailJS)</h5>
-                <p class="auth-hint">
-                    Cree una cuenta gratuita en <a href="https://emailjs.com" target="_blank">emailjs.com</a>,
-                    conecte su correo y cree una plantilla. Ingrese los datos aquí.
-                </p>
-                <div class="mb-3">
-                    <label class="form-label">Service ID</label>
-                    <input type="text" id="setup-ejs-service" class="form-control auth-input"
-                        placeholder="service_xxxxxxx">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Template ID</label>
-                    <input type="text" id="setup-ejs-template" class="form-control auth-input"
-                        placeholder="template_xxxxxxx">
-                    <div class="form-text auth-hint-small">
-                        La plantilla debe incluir las variables: <code>{{to_email}}</code>, <code>{{username}}</code>,
-                        <code>{{password}}</code>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Public Key</label>
-                    <input type="text" id="setup-ejs-pubkey" class="form-control auth-input"
-                        placeholder="xxxxxxxxxxxxxxxxxxxx">
-                </div>
-                <button class="btn auth-btn-primary w-100" id="btn-setup-save-emailjs">
-                    <i class="fas fa-check"></i> Guardar configuración de correo
-                </button>
-            </div>
-
-            <!-- Paso 2: Provisionar usuario -->
-            <div id="setup-step-provision" style="display:none;">
-                <h5 class="auth-section-title"><span class="auth-step-badge">2</span> Crear Usuario</h5>
-                <p class="auth-hint">Ingrese el correo del docente. El sistema generará un usuario y contraseña temporal
-                    y los enviará al correo indicado.</p>
-                <div class="mb-3">
-                    <label class="form-label">Correo electrónico del docente</label>
+            <p class="auth-hint">
+                Ingrese su correo institucional. El sistema generará sus credenciales de acceso
+                y las enviará automáticamente a esa dirección.
+            </p>
+            <div class="mb-3">
+                <label class="form-label">Correo electrónico institucional</label>
+                <div class="input-group">
+                    <span class="input-group-text auth-input-icon"><i class="fas fa-envelope"></i></span>
                     <input type="email" id="setup-email" class="form-control auth-input"
-                        placeholder="docente@correo.com">
+                        placeholder="docente@colegio.ed.cr" autocomplete="email">
                 </div>
-                <button class="btn auth-btn-primary w-100" id="btn-setup-provision">
-                    <i class="fas fa-paper-plane"></i> Enviar credenciales por correo
-                </button>
-                <button class="btn auth-btn-ghost w-100 mt-2" id="btn-setup-back-emailjs">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </button>
             </div>
-
-            <div id="setup-step-status" class="auth-status-msg" style="display:none;"></div>
+            <button class="btn auth-btn-primary w-100" id="btn-setup-provision">
+                <i class="fas fa-paper-plane"></i> Enviar credenciales
+            </button>
+            <div id="setup-step-status" class="auth-status-msg mt-3" style="display:none;"></div>
         </div>
     </div>
 

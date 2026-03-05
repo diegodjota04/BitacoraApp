@@ -219,54 +219,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ─── Flujo: Setup inicial ─────────────────────────────────────────────────
     function initSetupScreen() {
-        // Pre-cargar datos si ya existen
-        const cfg = AuthService.getEmailJSConfig();
-        if (cfg.serviceId) document.getElementById('setup-ejs-service').value = cfg.serviceId;
-        if (cfg.templateId) document.getElementById('setup-ejs-template').value = cfg.templateId;
-        if (cfg.publicKey) document.getElementById('setup-ejs-pubkey').value = cfg.publicKey;
+        const emailInput = document.getElementById('setup-email');
+        if (emailInput) emailInput.focus();
 
-        // Paso 1 → Paso 2
-        document.getElementById('btn-setup-save-emailjs')?.addEventListener('click', () => {
-            const svc = document.getElementById('setup-ejs-service')?.value.trim();
-            const tpl = document.getElementById('setup-ejs-template')?.value.trim();
-            const key = document.getElementById('setup-ejs-pubkey')?.value.trim();
-            if (!svc || !tpl || !key) {
-                setStatusMsg('setup-step-status', 'Complete todos los campos de EmailJS.', 'error');
-                document.getElementById('setup-step-status').style.display = 'block';
-                return;
-            }
-            AuthService.saveEmailJSConfig(svc, tpl, key);
-            document.getElementById('setup-step-emailjs').style.display = 'none';
-            document.getElementById('setup-step-provision').style.display = '';
-            clearStatusMsg('setup-step-status');
-        });
-
-        // Volver al paso 1
-        document.getElementById('btn-setup-back-emailjs')?.addEventListener('click', () => {
-            document.getElementById('setup-step-provision').style.display = 'none';
-            document.getElementById('setup-step-emailjs').style.display = '';
-        });
-
-        // Paso 2 → Enviar correo
         document.getElementById('btn-setup-provision')?.addEventListener('click', async () => {
             const email = document.getElementById('setup-email')?.value.trim();
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 setStatusMsg('setup-step-status', 'Ingrese un correo electrónico válido.', 'error');
-                document.getElementById('setup-step-status').style.display = 'block';
                 return;
             }
             setLoading('btn-setup-provision', true, 'Enviando correo...');
             clearStatusMsg('setup-step-status');
             const result = await AuthService.provisionUser(email);
             setLoading('btn-setup-provision', false);
-            const statusEl = document.getElementById('setup-step-status');
-            if (statusEl) statusEl.style.display = 'block';
             if (result.success) {
                 setStatusMsg('setup-step-status', `✅ ${result.message} — Ahora inicie sesión.`, 'success');
                 setTimeout(() => showAuthScreen('auth-login-screen'), 3000);
             } else {
                 setStatusMsg('setup-step-status', `❌ ${result.message}`, 'error');
             }
+        });
+
+        // Enviar al presionar Enter
+        document.getElementById('setup-email')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') document.getElementById('btn-setup-provision')?.click();
         });
     }
 

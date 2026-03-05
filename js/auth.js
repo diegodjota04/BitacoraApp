@@ -13,9 +13,6 @@ const AuthService = {
         IS_CONFIGURED: 'auth_configured',
         FIRST_LOGIN: 'auth_first_login',
         SESSION_TOKEN: 'auth_session',
-        EMAILJS_SVC: 'auth_ejs_service',
-        EMAILJS_TPL: 'auth_ejs_template',
-        EMAILJS_KEY: 'auth_ejs_pubkey',
     },
 
     // ─── SHA-256 mediante Web Crypto API ──────────────────────────────────────
@@ -51,25 +48,6 @@ const AuthService = {
         return localStorage.getItem(this.KEYS.USERNAME) || '';
     },
 
-    // ─── EmailJS config ───────────────────────────────────────────────────────
-    saveEmailJSConfig(serviceId, templateId, publicKey) {
-        localStorage.setItem(this.KEYS.EMAILJS_SVC, serviceId);
-        localStorage.setItem(this.KEYS.EMAILJS_TPL, templateId);
-        localStorage.setItem(this.KEYS.EMAILJS_KEY, publicKey);
-    },
-
-    getEmailJSConfig() {
-        return {
-            serviceId: localStorage.getItem(this.KEYS.EMAILJS_SVC) || '',
-            templateId: localStorage.getItem(this.KEYS.EMAILJS_TPL) || '',
-            publicKey: localStorage.getItem(this.KEYS.EMAILJS_KEY) || '',
-        };
-    },
-
-    isEmailJSConfigured() {
-        const cfg = this.getEmailJSConfig();
-        return cfg.serviceId && cfg.templateId && cfg.publicKey;
-    },
 
     // ─── Provisionar nuevo usuario ────────────────────────────────────────────
     /**
@@ -78,28 +56,25 @@ const AuthService = {
      * @returns {Promise<{success: boolean, message: string}>}
      */
     async provisionUser(email) {
-        const cfg = this.getEmailJSConfig();
-        if (!cfg.serviceId || !cfg.templateId || !cfg.publicKey) {
-            return { success: false, message: 'EmailJS no está configurado.' };
+        const { SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY } = CONFIG.EMAILJS;
+        if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+            return { success: false, message: 'El servicio de correo no está configurado en el sistema.' };
         }
 
         const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
         const tempPassword = this.generateRandomPassword();
 
         try {
-            // Inicializar EmailJS con la public key
-            emailjs.init({ publicKey: cfg.publicKey });
+            emailjs.init({ publicKey: PUBLIC_KEY });
 
-            // Enviar correo con las credenciales
-            await emailjs.send(cfg.serviceId, cfg.templateId, {
+            await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
                 to_email: email,
                 username: username,
                 password: tempPassword,
-                app_name: 'Bitácora Escolar',
-                app_version: typeof CONFIG !== 'undefined' ? CONFIG.VERSION : '',
+                app_name: CONFIG.APP_NAME,
+                app_version: CONFIG.VERSION,
             });
 
-            // Guardar credenciales hasheadas
             const hash = await this.hashPassword(tempPassword);
             localStorage.setItem(this.KEYS.USERNAME, username);
             localStorage.setItem(this.KEYS.PASS_HASH, hash);
@@ -114,7 +89,7 @@ const AuthService = {
             console.error('[Auth] Error enviando correo:', err);
             return {
                 success: false,
-                message: `Error al enviar correo: ${err?.text || err?.message || 'Revise la configuración de EmailJS.'}`
+                message: `Error al enviar el correo. Verifique que la dirección sea correcta.`
             };
         }
     },

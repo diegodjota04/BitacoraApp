@@ -51,7 +51,14 @@ const CONFIG = {
         AGREEMENT: ['De Acuerdo', 'Parcialmente de acuerdo', 'Parcialmente en desacuerdo', 'En desacuerdo'],
         QUALITY: ['Excelente', 'Bueno', 'Regular', 'Deficiente'],
         TIME: ['Suficiente', 'Adecuado', 'Moderado', 'Insuficiente']
-    }
+    },
+    // EmailJS — configurado por el administrador del sistema
+    // Las credenciales solo funcionan para enviar correos de aprovisionamiento de cuenta.
+    EMAILJS: {
+        SERVICE_ID: 'service_wzbibmf',
+        TEMPLATE_ID: 'template_yawich7',
+        PUBLIC_KEY: 'SYu9VRyENeB0YbYfT',
+    },
 };
 
 // Congelar configuración para prevenir modificaciones
@@ -59,5 +66,5 @@ Object.freeze(CONFIG);
 Object.freeze(CONFIG.COLORS);
 Object.freeze(CONFIG.STUDENT_STATES);
 Object.freeze(CONFIG.COMMENT_TYPES);
-// CONFIG.DEFAULT_GROUPS removed — groups are managed dynamically via StorageService
 Object.freeze(CONFIG.EVALUATION_OPTIONS);
+Object.freeze(CONFIG.EMAILJS);
