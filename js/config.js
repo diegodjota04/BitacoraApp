@@ -3,7 +3,8 @@
  */
 const CONFIG = {
     // Configuración general
-    VERSION: '2.3.1',
+    VERSION: '2.3.2',
+
     APP_NAME: 'Bitácora Escolar',
 
     // Llave de sesión — cambiar este valor e intentar un push invalida TODAS las sesiones activas.

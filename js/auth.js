@@ -123,6 +123,15 @@ const AuthService = {
 
         sessionStorage.setItem(this.KEYS.SESSION_TOKEN, 'authenticated');
         localStorage.setItem(this.KEYS.SESSION_KEY, CONFIG.SESSION_KEY);
+
+        // Derivar clave AES desde la contraseña y guardarla en sessionStorage
+        try {
+            const aesKey = await CryptoService.deriveKey(password);
+            await CryptoService.saveSessionKey(aesKey);
+        } catch (e) {
+            console.warn('[Auth] No se pudo derivar clave AES:', e);
+        }
+
         return { success: true, firstLogin: this.isFirstLogin() };
     },
 
@@ -142,11 +151,22 @@ const AuthService = {
         const newHash = await this.hashPassword(newPassword);
         localStorage.setItem(this.KEYS.PASS_HASH, newHash);
         localStorage.setItem(this.KEYS.FIRST_LOGIN, 'false');
+
+        // Re-derivar la clave AES con la nueva contraseña
+        try {
+            const aesKey = await CryptoService.deriveKey(newPassword);
+            await CryptoService.saveSessionKey(aesKey);
+        } catch (e) {
+            console.warn('[Auth] No se pudo re-derivar clave AES:', e);
+        }
+
         return { success: true, message: 'Contraseña cambiada correctamente.' };
     },
 
     // ─── Logout ───────────────────────────────────────────────────────────────
     logout() {
         sessionStorage.removeItem(this.KEYS.SESSION_TOKEN);
+        CryptoService.clearSessionKey(); // Eliminar clave AES de sesión
     },
+
 };

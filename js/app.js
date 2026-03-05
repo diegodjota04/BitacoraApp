@@ -151,6 +151,22 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
+    // ─── Aviso de privacidad (primera vez) ───────────────────────────────────
+    const PRIVACY_KEY = 'privacy_accepted';
+    function showPrivacyNotice(onAccepted) {
+        if (localStorage.getItem(PRIVACY_KEY) === 'true') {
+            onAccepted();
+            return;
+        }
+        const notice = document.getElementById('privacy-notice');
+        if (notice) notice.style.display = 'flex';
+        document.getElementById('btn-accept-privacy')?.addEventListener('click', () => {
+            localStorage.setItem(PRIVACY_KEY, 'true');
+            if (notice) notice.style.display = 'none';
+            onAccepted();
+        });
+    }
+
     function hideAuthScreens() {
         ['auth-setup-screen', 'auth-login-screen', 'auth-change-pass-screen']
             .forEach(s => {
@@ -253,7 +269,47 @@ document.addEventListener('DOMContentLoaded', function () {
     function initLoginScreen() {
         togglePasswordVisibility('login-password', 'btn-toggle-login-pass');
 
+        const LOCKOUT_KEY = 'auth_lockout';
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_SECONDS = 30;
+
+        function getLockoutState() {
+            try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY)) || { attempts: 0, until: 0 }; }
+            catch { return { attempts: 0, until: 0 }; }
+        }
+        function saveLockoutState(state) {
+            localStorage.setItem(LOCKOUT_KEY, JSON.stringify(state));
+        }
+        function clearLockout() {
+            localStorage.removeItem(LOCKOUT_KEY);
+        }
+
+        function startLockoutCountdown(remainingMs) {
+            const btn = document.getElementById('btn-login');
+            const interval = setInterval(() => {
+                const remaining = Math.ceil((getLockoutState().until - Date.now()) / 1000);
+                if (remaining <= 0) {
+                    clearInterval(interval);
+                    clearLockout();
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión'; }
+                    clearStatusMsg('login-status');
+                } else {
+                    setStatusMsg('login-status', `⏳ Demasiados intentos fallidos. Espere ${remaining} segundo(s).`, 'error');
+                    if (btn) btn.disabled = true;
+                }
+            }, 1000);
+        }
+
+        // Verificar si hay bloqueo activo al cargar
+        const state = getLockoutState();
+        if (state.until > Date.now()) {
+            startLockoutCountdown(state.until - Date.now());
+        }
+
         const doLogin = async () => {
+            const lockState = getLockoutState();
+            if (lockState.until > Date.now()) return; // Bloqueado
+
             const user = document.getElementById('login-username')?.value.trim();
             const pass = document.getElementById('login-password')?.value;
             if (!user || !pass) {
@@ -265,13 +321,23 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await AuthService.login(user, pass);
             setLoading('btn-login', false);
             if (result.success) {
+                clearLockout();
                 if (result.firstLogin) {
                     showAuthScreen('auth-change-pass-screen');
                 } else {
                     initApp();
                 }
             } else {
-                setStatusMsg('login-status', `❌ ${result.message}`, 'error');
+                lockState.attempts = (lockState.attempts || 0) + 1;
+                if (lockState.attempts >= MAX_ATTEMPTS) {
+                    lockState.until = Date.now() + LOCKOUT_SECONDS * 1000;
+                    saveLockoutState(lockState);
+                    startLockoutCountdown(LOCKOUT_SECONDS * 1000);
+                } else {
+                    saveLockoutState(lockState);
+                    const remaining = MAX_ATTEMPTS - lockState.attempts;
+                    setStatusMsg('login-status', `❌ ${result.message} (${remaining} intento(s) restante(s))`, 'error');
+                }
             }
         };
 
@@ -312,16 +378,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ─── Punto de entrada: decidir qué pantalla mostrar ────────────────────────
-    if (AuthService.isAuthenticated()) {
-        initApp();
-    } else if (!AuthService.isConfigured()) {
-        initSetupScreen();
-        showAuthScreen('auth-setup-screen');
-    } else {
-        initLoginScreen();
-        initChangePasScreen();
-        showAuthScreen('auth-login-screen');
-        // Enfocar campo de usuario
-        setTimeout(() => document.getElementById('login-username')?.focus(), 200);
-    }
+    showPrivacyNotice(() => {
+        if (AuthService.isAuthenticated()) {
+            initApp();
+        } else if (!AuthService.isConfigured()) {
+            initSetupScreen();
+            showAuthScreen('auth-setup-screen');
+        } else {
+            initLoginScreen();
+            initChangePasScreen();
+            showAuthScreen('auth-login-screen');
+            setTimeout(() => document.getElementById('login-username')?.focus(), 200);
+        }
+    });
 });

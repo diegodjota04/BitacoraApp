@@ -222,6 +222,29 @@
         </div>
     </div>
 
+    <!-- Aviso de Privacidad (se muestra una sola vez) -->
+    <div id="privacy-notice" class="auth-overlay" style="display:none;">
+        <div class="auth-card" style="max-width:480px;">
+            <div class="auth-logo">
+                <i class="fas fa-shield-alt"></i>
+                <h2>Aviso de Privacidad</h2>
+            </div>
+            <p class="auth-hint">
+                Esta aplicación almacena datos de clase —incluyendo <strong>nombres de estudiantes</strong>—
+                únicamente en <strong>este dispositivo y navegador</strong>, de forma cifrada.
+                No se envían a ningún servidor externo.
+            </p>
+            <ul class="small text-start" style="color:var(--auth-text-secondary, #94a3b8);">
+                <li>Use solo en <strong>dispositivos institucionales</strong> o de uso exclusivo del docente.</li>
+                <li>No instale la app en dispositivos compartidos o personales no seguros.</li>
+                <li>Exporte y elimine los datos al finalizar el curso escolar.</li>
+            </ul>
+            <button class="btn auth-btn-primary w-100 mt-3" id="btn-accept-privacy">
+                <i class="fas fa-check-circle"></i> Entendido, continuar
+            </button>
+        </div>
+    </div>
+
     <!-- Modales -->
     <div id="modals-container"></div>
 
@@ -242,6 +265,7 @@
     <script src="js/error-handler.js"></script>
     <script src="js/validators.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/crypto-service.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/student-manager.js"></script>
     <script src="js/session-manager.js"></script>

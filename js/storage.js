@@ -95,6 +95,57 @@ class StorageService {
     }
 
     /**
+     * Guarda datos cifrados con AES-GCM si hay clave de sesión disponible.
+     * Si no hay clave (ej. primera vez), guarda sin cifrar.
+     * @param {string} key
+     * @param {any} value
+     * @returns {Promise<boolean>}
+     */
+    static async setEncrypted(key, value) {
+        try {
+            if (CryptoService.hasSessionKey()) {
+                const aesKey = await CryptoService.getSessionKey();
+                if (aesKey) {
+                    const encrypted = await CryptoService.encrypt(value, aesKey);
+                    return this.set(key, encrypted);
+                }
+            }
+            return this.set(key, value);
+        } catch (error) {
+            console.warn('[Storage] Cifrado falló, guardando sin cifrar:', error);
+            return this.set(key, value);
+        }
+    }
+
+    /**
+     * Obtiene y descifra datos guardados con setEncrypted().
+     * Compatible con datos guardados sin cifrar (retrocompatible).
+     * @param {string} key
+     * @param {any} defaultValue
+     * @returns {Promise<any>}
+     */
+    static async getEncrypted(key, defaultValue = null) {
+        try {
+            const raw = this.get(key, defaultValue);
+            if (raw === defaultValue) return defaultValue;
+
+            // Si comienza con 'enc:', intentar descifrar
+            if (CryptoService.isEncrypted(raw) && CryptoService.hasSessionKey()) {
+                const aesKey = await CryptoService.getSessionKey();
+                if (aesKey) {
+                    return await CryptoService.decrypt(raw, aesKey);
+                }
+            }
+            // Datos en texto plano (retrocompatible con datos anteriores al cifrado)
+            return raw;
+        } catch (error) {
+            console.warn('[Storage] Descifrado falló, devolviendo raw:', error);
+            return this.get(key, defaultValue);
+        }
+    }
+
+
+    /**
      * Elimina datos
      * @param {string} key - Clave a eliminar
      * @returns {boolean}

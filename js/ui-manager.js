@@ -245,11 +245,11 @@ class UIManager {
     handleTimeChange() { this._tryCreateSession(); }
 
     /**
-     * Crea nueva sesión
+     * Crea nueva sesión (async por el cifrado de datos)
      */
-    createSession(grupo, fecha, startTime) {
+    async createSession(grupo, fecha, startTime) {
         try {
-            if (this.sessionManager.createSession(grupo, fecha, startTime)) {
+            if (await this.sessionManager.createSession(grupo, fecha, startTime)) {
                 this.updateSessionInfo();
                 this.showBasicInterface();
             }
@@ -1131,15 +1131,242 @@ class UIManager {
     }
 
     showHelp() {
-        this.showModal('help', 'ℹ️ Ayuda — Bitácora Escolar v' + CONFIG.VERSION, `
-            <dl class="row">
-                <dt class="col-sm-4">Ctrl + S</dt>
-                <dd class="col-sm-8">Guardar sesión activa</dd>
-                <dt class="col-sm-4">Ctrl + P</dt>
-                <dd class="col-sm-8">Generar PDF de la sesión</dd>
-            </dl>
-        `);
+        const modalHtml = `
+        <div class="modal fade" id="helpModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-book-open"></i> Manual de Usuario — Bitácora Escolar <span class="badge bg-secondary">${CONFIG.VERSION}</span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" id="help-manual-body">
+
+                        <!-- SECCIÓN 1 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-2"><i class="fas fa-sign-in-alt"></i> 1. Primer Acceso</h6>
+                        <ol>
+                            <li>Al abrir la app por primera vez, aparece la pantalla de <strong>Configuración Inicial</strong>.</li>
+                            <li>Ingrese su <strong>correo institucional</strong> y presione <em>"Enviar credenciales"</em>.</li>
+                            <li>Revise su correo: recibirá su <strong>nombre de usuario</strong> y una <strong>contraseña temporal</strong>.</li>
+                            <li>Use esas credenciales para iniciar sesión en la pantalla de Login.</li>
+                            <li>El sistema le pedirá <strong>establecer una nueva contraseña</strong> (mínimo 8 caracteres). Este paso es obligatorio.</li>
+                        </ol>
+                        <div class="alert alert-info py-2 small">💡 El <strong>usuario</strong> es la parte de su correo antes del @. Ej: <code>maria.gomez@colegio.cr</code> → usuario: <code>mariagomez</code></div>
+
+                        <!-- SECCIÓN 2 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-cog"></i> 2. Configuración Inicial del Sistema</h6>
+                        <p class="small">Antes de registrar clases, realice estos pasos en <strong>Config</strong>:</p>
+                        <ol class="small">
+                            <li><strong>Nombre del profesor:</strong> ingrese su nombre completo y presione <em>Guardar</em>. Aparecerá en el encabezado y en los PDFs.</li>
+                            <li><strong>Importar estudiantes:</strong> cargue el archivo <code>.json</code> con los grupos y listas de estudiantes.</li>
+                            <li><strong>Grupos visibles:</strong> seleccione cuáles grupos aparecen en el selector principal.</li>
+                            <li><strong>Prefijo PDF</strong> (opcional): un código que se añade al nombre del archivo PDF descargado.</li>
+                        </ol>
+
+                        <!-- SECCIÓN 3 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-graduation-cap"></i> 3. Registrar una Clase</h6>
+                        <ol class="small">
+                            <li>En el <strong>Panel de Control</strong>, seleccione el <em>Grupo</em>, la <em>Fecha</em> y la <em>Hora de inicio</em>. La sesión se crea automáticamente.</li>
+                            <li>En la <strong>Lista de Estudiantes</strong>, marque la asistencia de cada uno: <span class="badge bg-success">Presente</span> <span class="badge bg-danger">Ausente</span> <span class="badge bg-warning text-dark">Tarde</span>.</li>
+                            <li>Use los botones de actividad para registrar eventos especiales:
+                                <ul>
+                                    <li>🚻 Baño &nbsp;|&nbsp; ➕ Enfermería &nbsp;|&nbsp; ⋯ Otra actividad &nbsp;|&nbsp; 🤝 Apoyos Educativos</li>
+                                </ul>
+                            </li>
+                            <li>Al activar <em>Apoyos Educativos</em>, se pedirá un <strong>comentario obligatorio</strong>.</li>
+                            <li>Complete los campos de la <strong>Lección</strong>: contenido, planificación, avances, observaciones y propuestas de mejora.</li>
+                            <li>Evalúe la clase usando los botones de la sección <strong>Evaluación</strong>.</li>
+                            <li>Presione <strong>Guardar Datos</strong> o use <kbd>Ctrl+S</kbd>.</li>
+                        </ol>
+
+                        <!-- SECCIÓN 4 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-file-pdf"></i> 4. Generar Bitácora PDF</h6>
+                        <ol class="small">
+                            <li>Con una sesión activa y datos completados, presione <strong>"Generar Bitácora PDF"</strong> o use <kbd>Ctrl+P</kbd>.</li>
+                            <li>El PDF se descargará automáticamente con el nombre: <code>[Prefijo]_Bitacora_[Grupo]_[Fecha].pdf</code></li>
+                        </ol>
+
+                        <!-- SECCIÓN 5 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-history"></i> 5. Historial de Sesiones</h6>
+                        <p class="small">Acceda con el botón <strong>Historial</strong> del Panel de Control.</p>
+                        <ul class="small">
+                            <li>Ver, recargar y generar PDF de sesiones anteriores.</li>
+                            <li>Filtrar por grupo o rango de fechas.</li>
+                        </ul>
+
+                        <!-- SECCIÓN 6 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-chart-line"></i> 6. Estadísticas</h6>
+                        <ul class="small">
+                            <li>El botón <strong>Estadísticas</strong> muestra resúmenes de asistencia por estudiante y por grupo.</li>
+                            <li>Se actualizan automáticamente al guardar cada sesión.</li>
+                        </ul>
+
+                        <!-- SECCIÓN 7 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-map-marked-alt"></i> 7. Mapa de Clase</h6>
+                        <ul class="small">
+                            <li><strong>Espejo de Clase:</strong> representación visual del aula con los estudiantes del grupo activo.</li>
+                            <li><strong>Grupos Aleatorios:</strong> genere grupos de trabajo configurando el tamaño (2–6) y definiendo excepciones de estudiantes que no pueden agruparse.</li>
+                        </ul>
+
+                        <!-- SECCIÓN 8 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-save"></i> 8. Respaldo y Recuperación de Datos</h6>
+                        <table class="table table-sm small">
+                            <thead class="table-light"><tr><th>Acción</th><th>Dónde</th><th>Qué hace</th></tr></thead>
+                            <tbody>
+                                <tr><td>Exportar Historial</td><td>Config</td><td>Descarga todas las sesiones en <code>.json</code></td></tr>
+                                <tr><td>Importar Historial</td><td>Config</td><td>Recupera sesiones desde un <code>.json</code> previo, sin sobreescribir</td></tr>
+                                <tr><td>Crear Respaldo Completo</td><td>Config</td><td>Exporta todo el contenido del navegador</td></tr>
+                                <tr><td>Exportar estudiantes</td><td>Config</td><td>Descarga la lista de grupos en <code>.json</code></td></tr>
+                            </tbody>
+                        </table>
+                        <div class="alert alert-warning py-2 small">⚠️ Los datos se guardan <strong>solo en este navegador y dispositivo</strong>. Se recomienda exportar el historial regularmente y guardarlo en OneDrive o una unidad segura.</div>
+
+                        <!-- SECCIÓN 9 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-lock"></i> 9. Seguridad y Contraseña</h6>
+                        <ul class="small">
+                            <li><strong>Cambiar contraseña:</strong> Config → Seguridad → Cambiar Contraseña.</li>
+                            <li><strong>Cerrar sesión:</strong> botón <i class="fas fa-sign-out-alt"></i> en la esquina superior derecha.</li>
+                            <li>Tras <strong>5 intentos fallidos</strong> de login, el acceso se bloquea por 30 segundos.</li>
+                            <li>No instale la app en dispositivos compartidos o no institucionales.</li>
+                        </ul>
+
+                        <!-- SECCIÓN 10 -->
+                        <h6 class="text-primary border-bottom pb-1 mt-3"><i class="fas fa-keyboard"></i> 10. Atajos de Teclado</h6>
+                        <dl class="row small">
+                            <dt class="col-sm-3"><kbd>Ctrl</kbd>+<kbd>S</kbd></dt><dd class="col-sm-9">Guardar sesión activa</dd>
+                            <dt class="col-sm-3"><kbd>Ctrl</kbd>+<kbd>P</kbd></dt><dd class="col-sm-9">Generar PDF de la sesión</dd>
+                        </dl>
+
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button class="btn btn-outline-danger btn-sm" id="btn-download-manual-pdf">
+                            <i class="fas fa-file-pdf"></i> Descargar Manual PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        const existing = document.getElementById('helpModal');
+        if (existing) existing.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        document.getElementById('btn-download-manual-pdf')?.addEventListener('click', () => {
+            this._generateHelpPDF();
+        });
+
+        const modal = new bootstrap.Modal(document.getElementById('helpModal'));
+        this.modals.set('help', modal);
+        modal.show();
     }
+
+    /**
+     * Genera y descarga el manual de usuario como PDF usando jsPDF
+     */
+    _generateHelpPDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const margin = 15;
+            const pageW = doc.internal.pageSize.getWidth();
+            const maxW = pageW - margin * 2;
+            let y = margin;
+
+            // Función helper para añadir texto con salto de página automático
+            const addLine = (text, opts = {}) => {
+                const { size = 10, bold = false, color = [30, 30, 30], indent = 0, spacing = 5 } = opts;
+                doc.setFontSize(size);
+                doc.setFont('helvetica', bold ? 'bold' : 'normal');
+                doc.setTextColor(...color);
+                const lines = doc.splitTextToSize(text, maxW - indent);
+                lines.forEach(line => {
+                    if (y + spacing > doc.internal.pageSize.getHeight() - margin) {
+                        doc.addPage();
+                        y = margin;
+                    }
+                    doc.text(line, margin + indent, y);
+                    y += spacing;
+                });
+            };
+
+            const addSection = (title) => {
+                y += 3;
+                doc.setFillColor(37, 99, 235);
+                doc.rect(margin, y - 4, maxW, 7, 'F');
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 255, 255);
+                doc.text(title, margin + 2, y);
+                y += 6;
+                doc.setTextColor(30, 30, 30);
+            };
+
+            // Portada
+            doc.setFillColor(37, 99, 235);
+            doc.rect(0, 0, pageW, 45, 'F');
+            doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+            doc.text('Bitácora Escolar', margin, 22);
+            doc.setFontSize(13); doc.setFont('helvetica', 'normal');
+            doc.text(`Manual de Usuario — v${CONFIG.VERSION}`, margin, 32);
+            doc.setFontSize(9); doc.setTextColor(200, 220, 255);
+            doc.text(`Generado el ${new Date().toLocaleDateString('es-CR')}`, margin, 40);
+            y = 55;
+            doc.setTextColor(30, 30, 30);
+
+            addSection('1. Primer Acceso');
+            addLine('Al abrir la app por primera vez, ingrese su correo institucional y presione "Enviar credenciales".', { size: 9 });
+            addLine('Revise su correo: recibirá su usuario (parte antes del @) y una contraseña temporal.', { size: 9 });
+            addLine('Inicie sesión y establezca una nueva contraseña (mínimo 8 caracteres). Este paso es obligatorio.', { size: 9 });
+
+            addSection('2. Configuración Inicial');
+            addLine('En Config, realice estos pasos antes de registrar clases:', { size: 9 });
+            addLine('• Ingrese su nombre completo y presione Guardar.', { size: 9, indent: 4 });
+            addLine('• Importe el archivo .json con los grupos y listas de estudiantes.', { size: 9, indent: 4 });
+            addLine('• Seleccione los grupos visibles en el selector del Panel de Control.', { size: 9, indent: 4 });
+
+            addSection('3. Registrar una Clase');
+            addLine('En el Panel de Control, seleccione Grupo, Fecha y Hora de inicio (la sesión se crea automáticamente).', { size: 9 });
+            addLine('Marque la asistencia: Presente / Ausente / Tarde para cada estudiante.', { size: 9 });
+            addLine('Use los botones de actividad para registrar: Baño, Enfermería, Otra actividad, Apoyos Educativos.', { size: 9 });
+            addLine('Al activar Apoyos Educativos se le solicitará un comentario obligatorio.', { size: 9 });
+            addLine('Complete los campos de la Lección y la Evaluación de la clase.', { size: 9 });
+            addLine('Presione "Guardar Datos" o use Ctrl+S para guardar.', { size: 9 });
+
+            addSection('4. Generar Bitácora PDF');
+            addLine('Con una sesión activa, presione "Generar Bitácora PDF" o use Ctrl+P.', { size: 9 });
+            addLine('El archivo se descargará con el nombre: [Prefijo]_Bitacora_[Grupo]_[Fecha].pdf', { size: 9 });
+
+            addSection('5. Historial y Estadísticas');
+            addLine('Botón "Historial": vea, recargue y genere PDF de sesiones anteriores.', { size: 9 });
+            addLine('Botón "Estadísticas": resúmenes de asistencia por estudiante y por grupo.', { size: 9 });
+
+            addSection('6. Mapa de Clase');
+            addLine('Espejo de Clase: representación visual del aula con posiciones de estudiantes.', { size: 9 });
+            addLine('Grupos Aleatorios: configure tamaño de grupos (2-6) y excepciones de agrupación.', { size: 9 });
+
+            addSection('7. Respaldo y Recuperación');
+            addLine('Exportar Historial → descarga todas las sesiones en .json (respaldo regular recomendado).', { size: 9 });
+            addLine('Importar Historial → recupera sesiones desde un archivo previo sin sobreescribir los existentes.', { size: 9 });
+            addLine('Crear Respaldo Completo → exporta todos los datos del navegador a un archivo .json.', { size: 9 });
+            addLine('IMPORTANTE: Los datos solo existen en este dispositivo y navegador. Respalde regularmente en OneDrive.', { size: 9, color: [180, 60, 0] });
+
+            addSection('8. Seguridad');
+            addLine('Cambiar contraseña: Config → Seguridad → Cambiar Contraseña.', { size: 9 });
+            addLine('Cerrar sesión: botón en la esquina superior derecha del encabezado.', { size: 9 });
+            addLine('Tras 5 intentos fallidos de login, el acceso se bloquea 30 segundos.', { size: 9 });
+            addLine('No instale la app en dispositivos compartidos o no institucionales.', { size: 9 });
+
+            addSection('9. Atajos de Teclado');
+            addLine('Ctrl + S    →   Guardar sesión activa', { size: 9 });
+            addLine('Ctrl + P    →   Generar PDF de la sesión', { size: 9 });
+
+            doc.save(`Manual_BitacoraEscolar_v${CONFIG.VERSION}.pdf`);
+        } catch (err) {
+            console.error('[Help] Error generando PDF del manual:', err);
+            errorHandler.showGlobalError('No se pudo generar el PDF del manual.');
+        }
+    }
+
 
     /**
      * Genera PDF (sincroniza campos primero)

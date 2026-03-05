@@ -16,7 +16,7 @@ class SessionManager {
      * @param {string} startTime - Hora de inicio
      * @returns {boolean} - Verdadero si se creó correctamente
      */
-    createSession(grupo, fecha, startTime) {
+    async createSession(grupo, fecha, startTime) {
         try {
             // Validar datos
             const groupValidation = Validators.validateGroup(grupo);
@@ -59,7 +59,7 @@ class SessionManager {
             this.currentSession.students = Object.fromEntries(studentsMap);
 
             // Cargar sesión existente si está disponible
-            this.loadExistingSession();
+            await this.loadExistingSession();
 
             // Iniciar auto-guardado
             this.startAutoSave();
@@ -75,14 +75,13 @@ class SessionManager {
     /**
      * Carga sesión existente desde almacenamiento
      */
-    loadExistingSession() {
+    async loadExistingSession() {
         if (!this.currentSession) return;
 
         const sessionKey = `session_${this.currentSession.grupo}_${this.currentSession.fecha}`;
-        const savedSession = StorageService.get(sessionKey);
+        const savedSession = await StorageService.getEncrypted(sessionKey);
 
         if (savedSession && savedSession.lastSaved) {
-            // Fusionar datos guardados con sesión actual
             this.currentSession = { ...this.currentSession, ...savedSession };
             this.studentManager.loadStudentsData(this.currentSession.students);
         }
@@ -93,28 +92,22 @@ class SessionManager {
      * @param {boolean} showNotification - Mostrar notificación de éxito
      * @returns {boolean} - Verdadero si se guardó correctamente
      */
-    saveSession(showNotification = false) {
+    async saveSession(showNotification = false) {
         if (!this.currentSession) {
             if (showNotification) errorHandler.handle(new Error('No hay sesión activa para guardar'), 'SessionManager.saveSession');
             return false;
         }
 
         try {
-            // Actualizar datos de estudiantes desde el manager
             this.currentSession.students = this.studentManager.getCurrentStudentsData();
             this.currentSession.lastSaved = new Date().toISOString();
 
             const sessionKey = `session_${this.currentSession.grupo}_${this.currentSession.fecha}`;
 
-            if (StorageService.set(sessionKey, this.currentSession)) {
+            if (await StorageService.setEncrypted(sessionKey, this.currentSession)) {
                 this.isDirty = false;
-
-                // Actualizar estadísticas si hay referencia disponible
                 window.bitacoraApp?.getComponent('statisticsManager')?.updateFromSession(this.currentSession);
-
-                if (showNotification) {
-                    errorHandler.showSuccess('Sesión guardada correctamente');
-                }
+                if (showNotification) errorHandler.showSuccess('Sesión guardada correctamente');
                 return true;
             } else {
                 throw new Error('Error al guardar en almacenamiento');
@@ -256,27 +249,21 @@ class SessionManager {
      * @param {string} fecha - Fecha de la sesión
      * @returns {boolean} - Verdadero si se cargó correctamente
      */
-    loadSession(grupo, fecha) {
+    async loadSession(grupo, fecha) {
         try {
             const sessionKey = `session_${grupo}_${fecha}`;
-            const savedSession = StorageService.get(sessionKey);
+            const savedSession = await StorageService.getEncrypted(sessionKey);
 
-            if (!savedSession) {
-                throw new Error('Sesión no encontrada');
-            }
+            if (!savedSession) throw new Error('Sesión no encontrada');
 
-            // Validar sesión
             const validation = Validators.validateSessionData(savedSession);
-            if (!validation.valid) {
-                throw new Error('Datos de sesión inválidos: ' + Object.values(validation.errors).join(', '));
-            }
+            if (!validation.valid) throw new Error('Datos de sesión inválidos: ' + Object.values(validation.errors).join(', '));
 
             this.stopAutoSave();
             this.currentSession = savedSession;
             this.studentManager.loadStudentsData(savedSession.students);
             this.startAutoSave();
             this.isDirty = false;
-
             return true;
         } catch (error) {
             errorHandler.handle(error, 'SessionManager.loadSession');
