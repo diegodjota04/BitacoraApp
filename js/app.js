@@ -234,6 +234,9 @@ document.addEventListener('DOMContentLoaded', function () {
             setLoading('btn-setup-provision', false);
             if (result.success) {
                 setStatusMsg('setup-step-status', `✅ ${result.message} — Ahora inicie sesión.`, 'success');
+                // Inicializar los handlers del login ANTES de mostrarlo
+                initLoginScreen();
+                initChangePasScreen();
                 setTimeout(() => showAuthScreen('auth-login-screen'), 3000);
             } else {
                 setStatusMsg('setup-step-status', `❌ ${result.message}`, 'error');

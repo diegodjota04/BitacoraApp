@@ -3,8 +3,12 @@
  */
 const CONFIG = {
     // Configuración general
-    VERSION: '2.3.0',
+    VERSION: '2.3.1',
     APP_NAME: 'Bitácora Escolar',
+
+    // Llave de sesión — cambiar este valor e intentar un push invalida TODAS las sesiones activas.
+    // Formato sugerido: 'YYYY-MM-DD-vN' (ej: '2026-03-05-v2')
+    SESSION_KEY: '2026-03-05-v1',
 
     // Intervalos y límites
     AUTO_SAVE_INTERVAL: 2 * 60 * 1000, // 2 minutos
@@ -68,3 +72,4 @@ Object.freeze(CONFIG.STUDENT_STATES);
 Object.freeze(CONFIG.COMMENT_TYPES);
 Object.freeze(CONFIG.EVALUATION_OPTIONS);
 Object.freeze(CONFIG.EMAILJS);
+// SESSION_KEY no se congela para permitir comparación dinámica

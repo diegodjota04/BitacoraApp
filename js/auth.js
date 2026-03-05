@@ -13,6 +13,7 @@ const AuthService = {
         IS_CONFIGURED: 'auth_configured',
         FIRST_LOGIN: 'auth_first_login',
         SESSION_TOKEN: 'auth_session',
+        SESSION_KEY: 'auth_session_key',
     },
 
     // ─── SHA-256 mediante Web Crypto API ──────────────────────────────────────
@@ -41,7 +42,15 @@ const AuthService = {
     },
 
     isAuthenticated() {
-        return sessionStorage.getItem(this.KEYS.SESSION_TOKEN) === 'authenticated';
+        const hasSession = sessionStorage.getItem(this.KEYS.SESSION_TOKEN) === 'authenticated';
+        if (!hasSession) return false;
+        // Verificar que la llave de sesión siga siendo válida
+        const storedKey = localStorage.getItem(this.KEYS.SESSION_KEY);
+        if (storedKey !== CONFIG.SESSION_KEY) {
+            this.logout();
+            return false;
+        }
+        return true;
     },
 
     getUsername() {
@@ -113,6 +122,7 @@ const AuthService = {
         }
 
         sessionStorage.setItem(this.KEYS.SESSION_TOKEN, 'authenticated');
+        localStorage.setItem(this.KEYS.SESSION_KEY, CONFIG.SESSION_KEY);
         return { success: true, firstLogin: this.isFirstLogin() };
     },
 
