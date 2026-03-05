@@ -76,35 +76,39 @@ self.addEventListener('activate', event => {
     );
 });
 
-// ─── Fetch: estrategia Cache First con fallback a red ────────────────────────
+// ─── Fetch: estrategia mixta según tipo de recurso ───────────────────────────
 self.addEventListener('fetch', event => {
     // Solo manejar GET requests
     if (event.request.method !== 'GET') return;
 
     const url = new URL(event.request.url);
+    const isCDN = url.hostname.includes('cdnjs.cloudflare.com');
+    const isLocalJS = !isCDN && (url.pathname.endsWith('.js') || url.pathname.endsWith('.css'));
 
-    // Para navegación: Network First (siempre intenta la red primero)
-    if (event.request.mode === 'navigate') {
+    // Para navegación o archivos JS/CSS locales: Network First
+    if (event.request.mode === 'navigate' || isLocalJS) {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    // Guardar copia fresca en caché
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    if (response && response.status === 200) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    }
                     return response;
                 })
-                .catch(() => caches.match('./index.html'))
+                .catch(() => caches.match(event.request)
+                    .then(cached => cached || caches.match('./index.html'))
+                )
         );
         return;
     }
 
-    // Para el resto: Cache First
+    // Para CDN e imágenes: Cache First (son recursos estables)
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
             if (cachedResponse) return cachedResponse;
 
             return fetch(event.request).then(response => {
-                // No cachear respuestas inválidas
                 if (!response || response.status !== 200 || response.type === 'opaque') {
                     return response;
                 }
@@ -112,7 +116,6 @@ self.addEventListener('fetch', event => {
                 caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
                 return response;
             }).catch(() => {
-                // Fallback para imágenes
                 if (event.request.destination === 'image') {
                     return caches.match('./icons/icon-192x192.png');
                 }
